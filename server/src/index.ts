@@ -37,7 +37,7 @@ app.use(express.json())
 
 app.get('/balls', async (req, res) => {
   const balls = await getBalls()
-  res.json(balls)
+  res.json({'balls': balls})
 })
 
 app.post('/balls', async (req, res) => {
@@ -52,12 +52,12 @@ app.post('/balls', async (req, res) => {
   if (!ball) {
     await addBall(number)
     const balls = await getBalls()
-    broadcast({ type: 'added', number })
+    broadcast({ type: 'added', number, balls: balls })
     return res.json({ action: 'added', balls })
   } else {
     await removeBall(number)
     const balls = await getBalls()
-    broadcast({ type: 'removed', number })
+    broadcast({ type: 'removed', number, balls: balls })
     return res.json({ action: 'removed', balls })
   }
 })

@@ -1,26 +1,19 @@
 
 import * as THREE from 'three'
-import { useRef } from 'react'
+import { useRef, useEffect, useState } from 'react'
 
 import { Html } from '@react-three/drei'
 import { Text } from '@react-three/drei'
 import type { ThreeElements } from '@react-three/fiber'
 
 import { LetterBingo } from './LetterBingo'
-import { Ball } from './Ball'
+import { Ball, type BallHandle } from './Ball'
+
+import { postBall, getBalls } from '../api'
 
 const handleBallClick = async (number: number) => {
   try {
-    const response = await fetch('http://localhost:3001/balls', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ number })
-    })
-    if (!response.ok) {
-      throw new Error(`Erro do servidor: ${response.status}`)
-    }
-    const data = await response.json()
-    console.log(data)
+    await postBall(number)
   } catch (err) {
     console.error('Erro ao enviar número:', err)
   }
@@ -28,8 +21,9 @@ const handleBallClick = async (number: number) => {
 
 export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
     const meshRef = useRef<THREE.Mesh>(null!)
+    const ballRefs = useRef<Map<number, React.RefObject<BallHandle | null>>>(new Map())
 
-    const numbers = [
+    const ALL_NUMBERS = [
         [1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15],
         [16,17,18,19,20,21,22,23,24,25,26,27,28,29,30],
         [31,32,33,34,35,36,37,38,39,40,41,42,43,44,45],
@@ -39,6 +33,16 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
 
     const spacingX = 1.1
     const spacingY = 1.1
+
+    useEffect(() => {
+        getBalls().then(data => {
+            data.balls.forEach((n) => {
+                const ref = ballRefs.current.get(n)
+                if (ref?.current) ref.current.activate()
+            })
+        })
+        .catch(err => console.error('Erro ao carregar bolas:', err))
+    }, [])
 
     return (
         <mesh
@@ -67,12 +71,16 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
             </mesh>
 
             <mesh position={[0.3, 1.2, 0]}>
-                {numbers.map((row, rowIndex) =>
+                {ALL_NUMBERS.map((row, rowIndex) =>
                     row.map((number, colIndex) => {
                         const x = colIndex * spacingX - ((row.length - 1) * spacingX) / 2
-                        const y = -rowIndex * spacingY + ((numbers.length - 1) * spacingY) / 2
+                        const y = -rowIndex * spacingY + ((ALL_NUMBERS.length - 1) * spacingY) / 2
+                        
+                        const ref = useRef<BallHandle>(null)
+                        ballRefs.current.set(number, ref)
+
                         return (
-                            <Ball key={number} number={number} position={[x, y, 0]} onClick={handleBallClick}/>
+                            <Ball ref={ref} key={number} number={number} position={[x, y, 0]} onClick={handleBallClick} />
                         )
                     })
                 )}
