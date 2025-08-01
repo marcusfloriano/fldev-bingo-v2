@@ -1,27 +1,29 @@
 
 import * as THREE from 'three'
 import { useRef } from 'react'
-import type { ThreeElements } from '@react-three/fiber'
+
+import { Html } from '@react-three/drei'
 import { Text } from '@react-three/drei'
+import type { ThreeElements } from '@react-three/fiber'
+
 import { LetterBingo } from './LetterBingo'
 import { Ball } from './Ball'
 
 const handleBallClick = async (number: number) => {
-  console.log(`Ball clicked: ${number}`)
-
-//   // Aqui você pode fazer uma animação com GSAP ou alterar um estado de escala, por exemplo
-
-//   // Enviar número para API (exemplo usando fetch)
-//   try {
-//     await fetch('/api/ball-clicked', {
-//       method: 'POST',
-//       headers: { 'Content-Type': 'application/json' },
-//       body: JSON.stringify({ number })
-//     })
-//     console.log('Número enviado com sucesso!')
-//   } catch (err) {
-//     console.error('Erro ao enviar número:', err)
-//   }
+  try {
+    const response = await fetch('http://localhost:3001/balls', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ number })
+    })
+    if (!response.ok) {
+      throw new Error(`Erro do servidor: ${response.status}`)
+    }
+    const data = await response.json()
+    console.log(data)
+  } catch (err) {
+    console.error('Erro ao enviar número:', err)
+  }
 }
 
 export function SettingsScreen({ ...props }: ThreeElements['mesh']) {

@@ -1,30 +1,13 @@
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrthographicCamera } from '@react-three/drei'
 import { PrincipalScreen } from './components/PrincipalScreen'
 import { SettingsScreen } from './components/SettingsScreen'
+import { useGlobalShortcut } from './hooks/useGlobalShortcut'
 
 import './App.css'
-
-export function useGlobalShortcut(callback: () => void) {
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const isCmdOrCtrl = event.ctrlKey || event.metaKey
-      const isShift = event.shiftKey
-      const isP = event.key.toLowerCase() === 'p'
-
-      if (isCmdOrCtrl && isShift && isP) {
-        event.preventDefault()
-        callback()
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [callback])
-}
 
 function ZoomCamera() {
   const { camera } = useThree()
