@@ -3,8 +3,9 @@ export type MessageHandler = (data: any) => void
 
 let socket: WebSocket | null = null
 let isConnected = false
+let channels: Map<string, MessageHandler> = new Map<string, MessageHandler>()
 
-export function connectWebSocket(url: string, onMessage: MessageHandler) {
+export function connectWebSocket(channel: string, url: string, onMessage: MessageHandler) {
   if (!socket || socket.readyState === WebSocket.CLOSED) {
     socket = new WebSocket(url)
 
@@ -16,14 +17,18 @@ export function connectWebSocket(url: string, onMessage: MessageHandler) {
     socket.addEventListener('close', () => {
       console.log('WebSocket closed, retrying in 3s...')
       isConnected = false
-      setTimeout(() => connectWebSocket(url, () => {}), 3000)
+      setTimeout(() => connectWebSocket(channel, url, () => {}), 3000)
     })
 
     socket.addEventListener('message', (event) => {
       const data = JSON.parse(event.data)
-      onMessage(data)
+      channels.forEach((handler, key) => {
+        handler(data)
+      })
     })
   }
+
+  channels.set(channel, onMessage)
 
 }
 

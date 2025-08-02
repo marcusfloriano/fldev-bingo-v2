@@ -1,5 +1,5 @@
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrthographicCamera } from '@react-three/drei'
@@ -7,29 +7,43 @@ import { PrincipalScreen } from './components/PrincipalScreen'
 import { SettingsScreen } from './components/SettingsScreen'
 import { useGlobalShortcut } from './hooks/useGlobalShortcut'
 
+import { connectWebSocket } from './websocketClient'
+import { getZoom } from './api'
+
 import './App.css'
 
-function ZoomCamera() {
-  const { camera } = useThree()
-
-  useFrame(() => {
-    // Faz zoom in progressivo (aumenta zoom)
-    if ('zoom' in camera && camera.zoom < 200) {
-      camera.zoom += 0.5
-      camera.updateProjectionMatrix()
-    }
-  })
-
-  return null
+export function useWebSocket(onData: (ctrlZoomPanel: number, sortedZoomPanel: number) => void) {
+  useEffect(() => {
+    connectWebSocket('zoom', 'ws://localhost:3001', (data) => {
+        if(data.action == "zoom") {
+            onData(data.ctrlZoomPanel, data.sortedZoomPanel)
+        }
+    })
+  }, [onData])
 }
 
 function App() {
 
   const [showSettings, setSettings] = useState(true)
+  const [ctrlZoomPanel, setCtrlZoomPanel] = useState(73)
+  const [sortedZoomPanel, setSortedZoomPanel] = useState(73)
 
   useGlobalShortcut(() => {
     setSettings(prev => !prev)
   })
+
+  useWebSocket((ctrlZoomPanel, sortedZoomPanel) => {
+    setCtrlZoomPanel(ctrlZoomPanel)
+    setSortedZoomPanel(sortedZoomPanel)
+  })
+
+    useEffect(() => {
+        getZoom().then(data => {
+            setCtrlZoomPanel(data.ctrlZoomPanel)
+            setSortedZoomPanel(data.sortedZoomPanel)
+        })
+        .catch(err => console.error('Erro ao carregar Zoom:', err))
+    }, [])
 
   return (
     <Canvas>
@@ -39,11 +53,20 @@ function App() {
       <pointLight position={[-10, -10, -10]} decay={0} intensity={Math.PI} />
       {/* <SortedBall number={79} position={[0, 0, 0]} /> */}
 
-      <OrthographicCamera makeDefault position={[0, 0, 10]} zoom={73} />
       <ambientLight intensity={Math.PI / 1.5} />
       
-      {showSettings && <PrincipalScreen />}
-      {!showSettings && <SettingsScreen />}
+      {showSettings && (
+        <>
+          <OrthographicCamera makeDefault position={[0, 0, 10]} zoom={sortedZoomPanel} />
+          <PrincipalScreen />
+        </>
+      )}
+      {!showSettings && (
+        <>
+          <OrthographicCamera makeDefault position={[0, 0, 10]} zoom={ctrlZoomPanel} />
+          <SettingsScreen />
+        </>
+      )}
 
       {/* <SortedBall number={79} position={[0, 0, 0]} /> */}
 

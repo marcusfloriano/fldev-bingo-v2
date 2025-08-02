@@ -10,12 +10,14 @@ import { connectWebSocket } from '../websocketClient'
 
 import { getBalls } from '../api'
 
-export function useBallUpdates(onBall: (type: string, number: number, balls: number[]) => void) {
+export function useWebSocket(onData: (type: string, number: number, balls: number[]) => void) {
   useEffect(() => {
-    connectWebSocket('ws://localhost:3001', (data) => {
-        onBall(data.type, data.number, data.balls)
+    connectWebSocket('principal', 'ws://localhost:3001', (data) => {
+        if(data.action == "balls") {
+            onData(data.type, data.number, data.balls)
+        }
     })
-  }, [onBall])
+  }, [onData])
 }
 
 export function PrincipalScreen({ ...props }: ThreeElements['mesh']) {
@@ -23,7 +25,7 @@ export function PrincipalScreen({ ...props }: ThreeElements['mesh']) {
     const ballRefs = useRef<Map<number, React.RefObject<BallHandle | null>>>(new Map())
     const [ball, setBalls] = useState<number[]>([])
 
-    useBallUpdates((type, number, balls) => {
+    useWebSocket((type, number, balls) => {
         setBalls(balls)
         const ref = ballRefs.current.get(number)
         if(type == "added") {

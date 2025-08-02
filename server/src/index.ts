@@ -52,12 +52,12 @@ app.post('/balls', async (req, res) => {
   if (!ball) {
     await addBall(number)
     const balls = await getBalls()
-    broadcast({ type: 'added', number, balls: balls })
+    broadcast({ action: 'balls', type: 'added', number, balls: balls })
     return res.json({ action: 'added', balls })
   } else {
     await removeBall(number)
     const balls = await getBalls()
-    broadcast({ type: 'removed', number, balls: balls })
+    broadcast({ action: 'balls', type: 'removed', number, balls: balls })
     return res.json({ action: 'removed', balls })
   }
 })
@@ -65,6 +65,21 @@ app.post('/balls', async (req, res) => {
 app.post('/balls/clear', async (req, res) => {
   await clearBalls()
   return res.json({ action: 'cleared' })
+})
+
+app.get('/zoom', async (req, res) => {
+  const {ctrlZoomPanel, sortedZoomPanel} = await getZoom()
+  res.json({ctrlZoomPanel: ctrlZoomPanel, sortedZoomPanel: sortedZoomPanel})
+})
+
+app.post('/zoom', async (req, res) => {
+  const { ctrlZoomPanel, sortedZoomPanel } = req.body
+  if (typeof ctrlZoomPanel !== 'number' || typeof sortedZoomPanel !== 'number') {
+    return res.status(400).json({ error: 'Número inválido' })
+  }
+  await setZoom(ctrlZoomPanel, sortedZoomPanel)
+  broadcast({ action: 'zoom', ctrlZoomPanel: ctrlZoomPanel, sortedZoomPanel: sortedZoomPanel })
+  return res.json({ action: 'zoom', ctrlZoomPanel: ctrlZoomPanel, sortedZoomPanel: sortedZoomPanel })
 })
 
 server.listen(3001, () => {

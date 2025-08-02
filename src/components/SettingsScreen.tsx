@@ -9,7 +9,7 @@ import type { ThreeElements } from '@react-three/fiber'
 import { LetterBingo } from './LetterBingo'
 import { Ball, type BallHandle } from './Ball'
 
-import { postBall, getBalls } from '../api'
+import { postBall, getBalls, postZoom, getZoom } from '../api'
 
 const handleBallClick = async (number: number) => {
   try {
@@ -22,6 +22,8 @@ const handleBallClick = async (number: number) => {
 export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
     const meshRef = useRef<THREE.Mesh>(null!)
     const ballRefs = useRef<Map<number, React.RefObject<BallHandle | null>>>(new Map())
+    const [ctrlZoomPanel, setCtrlZoomPanel] = useState(73)
+    const [sortedZoomPanel, setSortedZoomPanel] = useState(73)
 
     const ALL_NUMBERS = [
         [1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15],
@@ -42,7 +44,21 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
             })
         })
         .catch(err => console.error('Erro ao carregar bolas:', err))
+
+        getZoom().then(data => {
+            setCtrlZoomPanel(data.ctrlZoomPanel)
+            setSortedZoomPanel(data.sortedZoomPanel)
+        })
+        .catch(err => console.error('Erro ao carregar Zoom:', err))
     }, [])
+
+    const handleReleaseZoom = async () => {
+        try {
+            await postZoom(ctrlZoomPanel, sortedZoomPanel)
+        } catch (err) {
+            console.error('Erro ao enviar número:', err)
+        }
+    }
 
     return (
         <mesh
@@ -87,7 +103,46 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
             </mesh>
 
             <mesh position={[0, -3.2, 0]}>
-                
+                <Html position={[-5.8,0,0]} center className="">
+                    <div className="card bg-base-200 w-96 card-lg shadow-sm  h-57">
+                        <div className="card-body">
+                            <h2 className="card-title">Reiniciar o Bingo</h2>
+                            <p>Todos os números serão apagados e não terá como recuperar, cuidado com essa ação!</p>
+                            <div className="justify-end card-actions">
+                            <button className="btn btn-lg btn-warning">Limpar</button>
+                            </div>
+                        </div>
+                    </div>
+                </Html>
+                <Html position={[0,0,0]} center className="">
+                    <div className="card bg-base-200 w-96 card-lg shadow-sm h-57">
+                        <div className="card-body">
+                            <h2 className="card-title">Sortear um novo Número</h2>
+                            <p>Será sortenado um novo número aleatório e apresentado para todos.</p>
+                            <div className="justify-end card-actions">
+                            <button className="btn btn-lg btn-primary">Sortear</button>
+                            </div>
+                        </div>
+                    </div>
+                </Html>
+               <Html position={[5.8,0,0]} center className="">
+                    <div className="card bg-base-200 w-96 card-sm shadow-sm h-25 mb-7">
+                        <div className="card-body">
+                            <h2 className="card-title">Zoom do Painel de Controle</h2>
+                            <div className="justify-end card-actions">
+                                <input type="range" min={0} max={200} value={ctrlZoomPanel} className="range range-neutrol" onMouseUp={handleReleaseZoom} onTouchEnd={handleReleaseZoom} onChange={(e) => setCtrlZoomPanel(Number(e.target.value))}/>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="card bg-base-200 w-96 card-sm shadow-sm h-25">
+                        <div className="card-body">
+                            <h2 className="card-title">Zoom da Tela de Sorteio</h2>
+                            <div className="justify-end card-actions">
+                                <input type="range" min={0} max={200} value={sortedZoomPanel} className="range range-secondary" onMouseUp={handleReleaseZoom} onTouchEnd={handleReleaseZoom} onChange={(e) => setSortedZoomPanel(Number(e.target.value))}/>
+                            </div>
+                        </div>
+                    </div>
+                </Html>
             </mesh>
         </mesh>
     )

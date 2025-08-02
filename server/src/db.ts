@@ -5,7 +5,8 @@ import { fileURLToPath } from 'url'
 
 type Data = {
   balls: number[],
-  zoom: number
+  ctrlZoomPanel: number,
+  sortedZoomPanel: number,
 }
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -13,7 +14,8 @@ const file = join(__dirname, 'db.json')
 const adapter = new JSONFile<Data>(file)
 const defaultData: Data = { 
     balls: [],
-    zoom: 75
+    ctrlZoomPanel: 73,
+    sortedZoomPanel: 73
 }
 const db = new Low<Data>(adapter, defaultData)
 
@@ -58,13 +60,14 @@ export async function clearBalls(): Promise<void> {
   await db.write()
 }
 
-export async function getZoom(): Promise<number> {
+export async function getZoom(): Promise<{ctrlZoomPanel: number, sortedZoomPanel: number}> {
   await db.read()
-  return db.data!.zoom
+  return {ctrlZoomPanel: db.data!.ctrlZoomPanel, sortedZoomPanel: db.data!.sortedZoomPanel}
 }
 
-export async function setZoom(value: number): Promise<void> {
+export async function setZoom(ctrlZoomPanel: number, sortedZoomPanel:number): Promise<void> {
   await db.read()
-  db.data!.zoom = value
+  db.data!.ctrlZoomPanel = ctrlZoomPanel
+  db.data!.sortedZoomPanel = sortedZoomPanel
   await db.write()
 }

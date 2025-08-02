@@ -91,7 +91,7 @@ export function SortedPanel({ numbers = [], ...props }: SortedPanelProps ) {
                     {getBingoLetter(numbers[numbers.length-1])}
                 </Text>
             </mesh>
-            <SmallPanel height={3} width={4.2} fontSize={2.2} number={getBingoLetter(numbers[numbers.length-2])} positionPanel={[-0.15, 0, 0]} positionText={[-0.1,  -0.2, 0]} />
+            <SmallPanel height={3} width={4.2} fontSize={2.2} number={getBingoLetter(numbers[numbers.length-2])} positionPanel={[-0.15, 0, 0]} positionText={[-0.15,  -0.2, 0]} />
 
             <SmallPanel number={getBingoLetter(numbers[numbers.length-3])} positionPanel={[ 3.7,  0.76, 0]} positionText={[ 3.7,  0.68, 0]} />
             <SmallPanel number={getBingoLetter(numbers[numbers.length-4])} positionPanel={[ 3.7, -0.75, 0]} positionText={[ 3.7, -0.85, 0]} />
