@@ -32,6 +32,10 @@ export function PrincipalScreen({ ...props }: ThreeElements['mesh']) {
             if (ref?.current) ref.current.activate()
         } else if (type == "removed") {
             if (ref?.current) ref.current.deactivate()
+        } else if(type == "cleared") {
+            ballRefs.current.forEach((ref) => {
+                if (ref.current) ref.current.deactivate()
+            })
         }
     })
 

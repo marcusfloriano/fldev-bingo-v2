@@ -64,6 +64,8 @@ app.post('/balls', async (req, res) => {
 
 app.post('/balls/clear', async (req, res) => {
   await clearBalls()
+  const balls = await getBalls()
+  broadcast({ action: 'balls', type: 'cleared', number: 0, balls: balls })
   return res.json({ action: 'cleared' })
 })
 

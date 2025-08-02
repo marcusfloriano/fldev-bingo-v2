@@ -9,7 +9,7 @@ import type { ThreeElements } from '@react-three/fiber'
 import { LetterBingo } from './LetterBingo'
 import { Ball, type BallHandle } from './Ball'
 
-import { postBall, getBalls, postZoom, getZoom } from '../api'
+import { postBall, getBalls, postZoom, getZoom, postBallClear } from '../api'
 
 const handleBallClick = async (number: number) => {
   try {
@@ -57,6 +57,17 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
             await postZoom(ctrlZoomPanel, sortedZoomPanel)
         } catch (err) {
             console.error('Erro ao enviar número:', err)
+        }
+    }
+
+    const handleBallClear = async () => {
+        try {
+            await postBallClear()
+            ballRefs.current.forEach((ref) => {
+                if (ref.current) ref.current.deactivate()
+            })
+        } catch (err) {
+            console.error('Erro ao limpar todas as marcações', err)
         }
     }
 
@@ -109,7 +120,7 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
                             <h2 className="card-title">Reiniciar o Bingo</h2>
                             <p>Todos os números serão apagados e não terá como recuperar, cuidado com essa ação!</p>
                             <div className="justify-end card-actions">
-                            <button className="btn btn-lg btn-warning">Limpar</button>
+                            <button className="btn btn-lg btn-warning" onClick={handleBallClear}>Limpar</button>
                             </div>
                         </div>
                     </div>
