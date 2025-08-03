@@ -12,7 +12,8 @@ type ButtomProps = {
   color?: string
   fontColor?: string
   text?: string
-  onClick: () => void
+  onClick: () => void,
+  onDoubleClick?: () => void,
 } & ThreeElements['mesh']
 
 function darkenColor(hex: string, amount: number = 0.05): string {
@@ -32,7 +33,8 @@ export function Buttom({
   color = '#219EBC',
   fontColor = '#FFFFFF',
   text = 'CLIQUE AQUI',
-  onClick 
+  onClick,
+  onDoubleClick
 }: ButtomProps) {
   const meshRef = useRef<THREE.Mesh>(null!)
   const [hovered, setHovered] = useState(false)
@@ -50,9 +52,6 @@ export function Buttom({
         ref={meshRef}
         scale={pressed ? 0.99 : 1}
         position={[0, pressed ? -0.02 : 0, 0]}
-        onPointerDown={() => {
-          setPressed(true)
-        }}
         onPointerOver={() => {
           setHovered(true)
           document.body.style.cursor = 'pointer'
@@ -62,10 +61,21 @@ export function Buttom({
           setHovered(false)
           document.body.style.cursor = 'default'
         }}
-        onClick={() => {
+        onPointerUp={(e) => {
+          e.stopPropagation()
+          setPressed(false)
+        }}
+        onPointerDown={(e) => {
+          e.stopPropagation()
           setPressed(true)
-          setTimeout(() => setPressed(false), 100)
-          onClick()
+        }}
+        onClick={(e) => {
+          e.stopPropagation()
+          if(onClick) onClick()
+        }}
+        onDoubleClick={(e) => {
+          e.stopPropagation()
+          if(onDoubleClick) onDoubleClick()
         }}
       >
         <RoundedBox

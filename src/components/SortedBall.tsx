@@ -4,8 +4,8 @@ import { useRef, useMemo } from 'react'
 import type { ThreeElements } from '@react-three/fiber'
 import { useFrame } from '@react-three/fiber'
 
-function createBingoTexture(number: number): THREE.Texture {
-    const size = 320
+function createBingoTexture(number: string): THREE.Texture {
+    const size = 1200
     const canvas = document.createElement('canvas')
     canvas.width = canvas.height = size
     const ctx = canvas.getContext('2d')!
@@ -26,54 +26,35 @@ function createBingoTexture(number: number): THREE.Texture {
         context.fill()
 
         context.fillStyle = '#000'
-        context.font = `38px Consolas`
+        context.font = `230px Impact`
         context.textAlign = 'center'
         context.textBaseline = 'middle'
-        context.fillText(number.toString(), x , y + 5)
+        context.fillText(number, x , y)
     }
 
     ctx.scale(0.5, 1)
-    circle((40)+((80)*0), 80, 30, ctx)
-    circle((40)+((80)*1), 80, 30, ctx)
-    circle((40)+((80)*2), 80, 30, ctx)
-    circle((40)+((80)*3), 80, 30, ctx)
-    circle((40)+((80)*4), 80, 30, ctx)
-    circle((40)+((80)*5), 80, 30, ctx)
-    circle((40)+((80)*6), 80, 30, ctx)
-    circle((40)+((80)*7), 80, 30, ctx)
 
-    circle((40)+((80)*0), 160, 30, ctx)
-    circle((40)+((80)*1), 160, 30, ctx)
-    circle((40)+((80)*2), 160, 30, ctx)
-    circle((40)+((80)*3), 160, 30, ctx)
-    circle((40)+((80)*4), 160, 30, ctx)
-    circle((40)+((80)*5), 160, 30, ctx)
-    circle((40)+((80)*6), 160, 30, ctx)
-    circle((40)+((80)*7), 160, 30, ctx)
-
-    circle((40)+((80)*0), 240, 30, ctx)
-    circle((40)+((80)*1), 240, 30, ctx)
-    circle((40)+((80)*2), 240, 30, ctx)
-    circle((40)+((80)*3), 240, 30, ctx)
-    circle((40)+((80)*4), 240, 30, ctx)
-    circle((40)+((80)*5), 240, 30, ctx)
-    circle((40)+((80)*6), 240, 30, ctx)
-    circle((40)+((80)*7), 240, 30, ctx)
-
+    const numbers = Array.from({ length: 4 }, (_, i) => i + 1)
+    numbers.map((num, index) => {
+        const x = (index * 600 + 300) + (index * 0)
+        circle(x, 600, 250, ctx)
+    })
 
     const texture = new THREE.CanvasTexture(canvas)
     texture.needsUpdate = true
     return texture
 }
 
-export function SortedBall({ number = 1, ...props }: ThreeElements['mesh'] & { number?: number }) {
+export function SortedBall({ number = '1', animated = true, ...props }: ThreeElements['mesh'] & { number?: string, animated?: boolean }) {
     const meshRef = useRef<THREE.Mesh>(null!)
     const texture = useMemo(() => createBingoTexture(number), [number])
 
     useFrame(() => {
-        if (meshRef.current) {
+        if (meshRef.current && animated) {
             meshRef.current.rotation.y += 0.1
-            meshRef.current.rotation.x += 0.06
+            // meshRef.current.rotation.x += 0.06
+        } else {
+            meshRef.current.rotation.y = 0.8    
         }
     })
     
@@ -81,10 +62,9 @@ export function SortedBall({ number = 1, ...props }: ThreeElements['mesh'] & { n
         <mesh
             {...props}
             ref={meshRef}
-            scale={1}
         >
-            {/* <planeGeometry args={[1, 1]}/> */}
-            <sphereGeometry args={[1, 64, 64]}/>
+            {/* <planeGeometry args={[10, 10]}/> */}
+            <sphereGeometry args={[4.5, 64, 64]}/>
             <meshStandardMaterial map={texture} />
         </mesh>
     )

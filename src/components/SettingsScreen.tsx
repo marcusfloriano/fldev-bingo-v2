@@ -1,9 +1,10 @@
 
 import * as THREE from 'three'
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, use } from 'react'
 
-import { Text } from '@react-three/drei'
+import { Text, Plane } from '@react-three/drei'
 import type { ThreeElements } from '@react-three/fiber'
+import { useFrame } from '@react-three/fiber'
 
 import { SmallPanel } from './base/SmallPanel'
 
@@ -11,6 +12,8 @@ import { LetterBingo } from './LetterBingo'
 import { Ball, type BallHandle } from './Ball'
 import { Buttom } from './base/Buttom'
 import { ZoomControl } from './base/ZoomControl'
+
+import { SortedBall } from './SortedBall'
 
 import { postBall, getBalls, postZoom, getZoom, postBallClear } from '../api'
 
@@ -50,6 +53,10 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
     const [balls, setBalls] = useState<number[]>([])
     const [ctrlZoomPanel, setCtrlZoomPanel] = useState(73)
     const [sortedZoomPanel, setSortedZoomPanel] = useState(73)
+    const [scaleSortedBall, setScaleSortedBall] = useState(1)
+    const [roll, setRoll] = useState(false)
+    const [sortedBall, setSortedBall] = useState("?")
+    const [animatedBall, setAnimatedBall] = useState(true)
 
     const ALL_NUMBERS = [
         [1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15],
@@ -78,6 +85,12 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
         })
         .catch(err => console.error('Erro ao carregar Zoom:', err))
     }, [])
+
+    useFrame(() => {
+        if(scaleSortedBall <= 4.5) {
+            setScaleSortedBall(scaleSortedBall + 0.1)
+        }
+    })
 
     const handleBallClick = async (number: number) => {
         try {
@@ -110,7 +123,26 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
 
     const handleRollNumber = async () => {
         const sortedNumber = rollNewNumber(balls)
-        console.log(sortedNumber)
+        if(sortedNumber) {
+            try {
+                const data = await postBall(sortedNumber)
+                const ref = ballRefs.current.get(sortedNumber)
+                if (ref?.current) ref.current.activate()
+                setAnimatedBall(false)
+                setBalls(data.balls)
+                setRoll(true)
+                setSortedBall(getBingoLetter(sortedNumber))
+                setTimeout(() => {
+                    setSortedBall(getBingoLetter(sortedNumber))
+                    setAnimatedBall(false)
+                }, 3000)
+                setTimeout(() => {
+                    setRoll(false)
+                }, 6000)
+            } catch (err) {
+                console.error('Erro ao enviar número:', err)
+            }
+        }
     }
 
     return (
@@ -172,8 +204,8 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
                 <mesh position={[1.9, -0.7, 0]}>
                     <SmallPanel number={getBingoLetter(balls[balls.length-5])} fontSize={1.5} height={1.5} width={3.1} positionPanel={[0,0,0]} positionText={[0,-0.1,0]} rounded={[0, 0.2, 0, 0]}/>
                 </mesh>
-                <Buttom text='SORTE!' height={1.5} fontSize={0.8} color="#d90429" position={[4.9, 0.85, 0]} onClick={() => {}} />
-                <Buttom text='LIMPAR' height={1.5} fontSize={0.76} color="#00c2cb" fontColor='#024D50' position={[4.9, -0.7, 0]} onClick={() => {handleBallClear()}} />
+                <Buttom text='SORTEIO' height={1.5} fontSize={0.7} color="#d90429" position={[4.9, 0.85, 0]} onClick={handleRollNumber} />
+                <Buttom text='LIMPAR' height={1.5} fontSize={0.76} color="#00c2cb" fontColor='#024D50' position={[7.4, -0.7, 0]} onClick={() => {handleBallClear()}} />
                 <ZoomControl 
                     position={[7.4,0.55,0]} 
                     number={ctrlZoomPanel}
@@ -189,7 +221,7 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
                     }}
                 />
                 <ZoomControl 
-                    position={[7.4,-0.9,0]} 
+                    position={[4.9,-0.9,0]} 
                     number={sortedZoomPanel}
                     text='ZOOM SORTEIO'
                     color='#d90429'
@@ -206,19 +238,21 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
                 />
             </mesh>
 
-            <mesh>
-                {/* <Plane
-                    args={[100, 100]} // cobre toda a tela
-                    position={[0, 0, 9.9]} // quase na frente da câmera (z = 10)
-                >
-                    <meshStandardMaterial
-                    color="black"
-                    transparent
-                    opacity={0.5} // 0.5 = 50% transparente
-                    />
-                </Plane> */}
-            {/* <SortedBall number={79} position={[0, 0, 0]} /> */}
-            </mesh>
+            {roll && (
+                <group>
+                    <Plane
+                        args={[100, 100]} // cobre toda a tela
+                        position={[0, 0, 2]} // quase na frente da câmera (z = 10)
+                    >
+                        <meshStandardMaterial
+                        color="black"
+                        transparent
+                        opacity={0.5} // 0.5 = 50% transparente
+                        />
+                    </Plane>
+                    <SortedBall rotation={[0,0.8,0]} number={sortedBall} position={[0, 0, 3]} scale={1} animated={animatedBall}/>
+                </group>
+            )}
         </mesh>
     )
 }
