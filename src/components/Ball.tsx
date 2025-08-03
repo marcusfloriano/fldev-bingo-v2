@@ -32,10 +32,11 @@ export type BallHandle = {
 
 type BallProps = ThreeElements['mesh'] & {
   number: number
+  clicked?: boolean
   onClick?: (number: number) => void
 }
 
-export const Ball = forwardRef<BallHandle, BallProps>(({ number = 1, onClick, ...props }, ref) => {
+export const Ball = forwardRef<BallHandle, BallProps>(({ number = 1, clicked = true, onClick, ...props }, ref) => {
   const meshRef = useRef<THREE.Mesh>(null!)
   const [selected, setSelected] = useState(false)
   const [scaleUp, setScaleUp] = useState(false)
@@ -74,6 +75,7 @@ export const Ball = forwardRef<BallHandle, BallProps>(({ number = 1, onClick, ..
   })
 
   const handleClick = () => {
+    if(!clicked) return
     setSelected(prev => !prev)
     setScaleUp(true)
     onClick?.(number)
@@ -86,6 +88,12 @@ export const Ball = forwardRef<BallHandle, BallProps>(({ number = 1, onClick, ..
       scale={baseScale}
       rotation={[0, Math.PI * 1.5, 0]}
       onClick={handleClick}
+      onPointerOver={() => {
+        document.body.style.cursor = 'pointer'
+      }}
+      onPointerOut={() => {
+        document.body.style.cursor = 'default'
+      }}
     >
       <sphereGeometry args={[1, 64, 64]} />
       <meshStandardMaterial map={texture} />

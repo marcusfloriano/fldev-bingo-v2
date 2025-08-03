@@ -49,7 +49,7 @@ function App() {
     }, [])
 
   return (
-    <Canvas>
+    <Canvas style={{ background: 'transparent' }} gl={{ alpha: true }}>
       <pointLight position={[-10, -10, -10]} decay={0} intensity={Math.PI} />
       <ambientLight intensity={Math.PI / 1.5} />
       <SVGIcon url='/svg/gear.svg' position={[8,4.6,0]} scale={0.007}

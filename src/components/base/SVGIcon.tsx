@@ -18,27 +18,31 @@ export function SVGIcon({
   const { paths } = useLoader(SVGLoader, url)
   return (
     <group scale={[scale, -scale, scale]} position={position} {...props}>
-      <mesh position={[22,23,1]}>
+      {/* <mesh position={[22,23,1]}>
         <sphereGeometry args={[32,32,32]}/>
         <meshStandardMaterial color="#CCCCCC"/>
-      </mesh>
-      <mesh position={[0,0,40]}>
-      {paths.map((path, i) => (
-        <group key={i} position={[0,0,0]}>
-          {path.toShapes(false).map((shape, j) => {
-            const geometry = new THREE.ExtrudeGeometry(shape, {
-              depth: 0.5,
-              bevelEnabled: false,
-            })
-            const material = new THREE.MeshBasicMaterial({
-              color: path.color?.getHex?.() || 0xff0000, // fallback
-              side: THREE.DoubleSide,
-            })
+      </mesh> */}
+      <mesh position={[0,0,0]}>
+        {paths.map((path, i) => (
+          <group key={i} position={[0,0,0]}>
+            {path.toShapes(false).map((shape, j) => {
+              const geometry = new THREE.ExtrudeGeometry(shape, {
+                depth: 0.5,
+                bevelEnabled: false,
+              })
+              const material = new THREE.MeshBasicMaterial({
+                color: path.color?.getHex?.() || 0xff0000, // fallback
+                side: THREE.DoubleSide,
+              })
 
-            return <mesh key={j} geometry={geometry} material={material} />
-          })}
-        </group>
-      ))}
+              return <mesh key={j} geometry={geometry} material={material} />
+            })}
+          </group>
+        ))}
+        <mesh position={[22, 22, 0]}>
+          <planeGeometry args={[50,50]}/>
+          <meshStandardMaterial color="#FFFFFF" transparent opacity={0}/>
+        </mesh>
       </mesh>
     </group>
   )

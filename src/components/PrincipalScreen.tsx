@@ -62,10 +62,12 @@ export function PrincipalScreen({ ...props }: ThreeElements['mesh']) {
                 }, 6000)
             } else {
                 if (ref?.current) ref.current.activate()
+                setBalls(balls)
             }
         } else if (type == "removed") {
             if (ref?.current) ref.current.deactivate()
         } else if(type == "cleared") {
+            setBalls([])
             ballRefs.current.forEach((ref) => {
                 if (ref.current) ref.current.deactivate()
             })
@@ -129,7 +131,7 @@ export function PrincipalScreen({ ...props }: ThreeElements['mesh']) {
                         const ref = useRef<BallHandle>(null)
                         ballRefs.current.set(number, ref)
                         return (
-                            <Ball ref={ref} key={number} number={number} position={[x, y, 0]}/>
+                            <Ball ref={ref} key={number} number={number} position={[x, y, 0]} clicked={false}/>
                         )
                     })
                 )}

@@ -1,6 +1,6 @@
 
 import * as THREE from 'three'
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useState, useEffect } from 'react'
 import type { ThreeElements } from '@react-three/fiber'
 import { useFrame } from '@react-three/fiber'
 
@@ -34,9 +34,8 @@ function createBingoTexture(number: string): THREE.Texture {
 
     ctx.scale(0.5, 1)
 
-    const numbers = Array.from({ length: 4 }, (_, i) => i + 1)
-    numbers.map((num, index) => {
-        const x = (index * 600 + 300) + (index * 0)
+    Array.from({ length: 4 }).forEach((_, index) => {
+        const x = (index * 600 + 300)
         circle(x, 600, 250, ctx)
     })
 
@@ -45,19 +44,43 @@ function createBingoTexture(number: string): THREE.Texture {
     return texture
 }
 
-export function SortedBall({ number = '1', animated = true, ...props }: ThreeElements['mesh'] & { number?: string, animated?: boolean }) {
+type SortedBallProps = {
+    number?: string, 
+    animated?: boolean
+} & ThreeElements['mesh']
+
+export function SortedBall({
+    number = '1',
+    animated = true,
+    ...props 
+}: SortedBallProps) {
     const meshRef = useRef<THREE.Mesh>(null!)
     const texture = useMemo(() => createBingoTexture(number), [number])
+    const [shouldLerp, setShouldLerp] = useState(false)
+    const targetRotationY = 0.8
+
+    useEffect(() => {
+        if (!animated) {
+            setShouldLerp(true)
+        }
+    }, [animated])
 
     useFrame(() => {
-        if (meshRef.current && animated) {
-            meshRef.current.rotation.y += 0.02
-            // meshRef.current.rotation.x += 0.06
-        } else {
-            meshRef.current.rotation.y = 0.8    
+        const mesh = meshRef.current
+        if (!mesh) return
+
+        if (animated) {
+            mesh.rotation.y += 0.03
+        } else if (shouldLerp) {
+            mesh.rotation.y = THREE.MathUtils.lerp(mesh.rotation.y, targetRotationY, 0.1)
+
+            if (Math.abs(mesh.rotation.y - targetRotationY) < 0.001) {
+                mesh.rotation.y = targetRotationY
+                setShouldLerp(false)
+            }
         }
     })
-    
+
     return (
         <mesh
             {...props}

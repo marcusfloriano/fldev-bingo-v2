@@ -94,29 +94,27 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
         }
     })
 
-    useEffect(() => {
+    const playSound = () => {
         const listener = new THREE.AudioListener()
         camera.add(listener)
 
         const sound = new THREE.Audio(listener)
         const loader = new THREE.AudioLoader()
 
-        loader.load('/sounds/roleta.mp3', (buffer) => {
+        const sorteio = Math.floor(Math.random() * 5) + 1
+        const url = `/sounds/musica-roleta-${sorteio}.mp3`
+
+        loader.load(url, (buffer) => {
             sound.setBuffer(buffer)
             sound.setLoop(false)
             sound.setVolume(1.5)
+            sound.play()
+
+            // Remover listener depois de tocar
+            sound.onEnded = () => {
+            camera.remove(listener)
+            }
         })
-
-        soundRef.current = sound
-
-        return () => {
-        sound.stop()
-        camera.remove(listener)
-        }
-    }, [camera])
-
-    const playSound = () => {
-        soundRef.current?.play()
     }
 
     const handleBallClick = async (number: number) => {
@@ -271,6 +269,10 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
                     <Plane
                         args={[100, 100]} // cobre toda a tela
                         position={[0, 0, 2]} // quase na frente da câmera (z = 10)
+                        onPointerDown={(e) => {e.stopPropagation()}}
+                        onClick={(e) => {e.stopPropagation()}}
+                        onPointerOver={(e) => {e.stopPropagation()}}
+                        onPointerOut={(e) => {e.stopPropagation()}}
                     >
                         <meshStandardMaterial
                         color="black"
