@@ -89,22 +89,23 @@ export function PrincipalScreen({ ...props }: ThreeElements['mesh']) {
 
             <mesh position={[0.3, 1.2, 0]}>
                 {numbers.map((row, rowIndex) =>
-                row.map((number, colIndex) => {
-                    const x = colIndex * spacingX - ((row.length - 1) * spacingX) / 2
-                    const y = -rowIndex * spacingY + ((numbers.length - 1) * spacingY) / 2
+                    row.map((number, colIndex) => {
+                        const x = colIndex * spacingX - ((row.length - 1) * spacingX) / 2
+                        const y = -rowIndex * spacingY + ((numbers.length - 1) * spacingY) / 2
 
-                    const ref = useRef<BallHandle>(null)
-                    ballRefs.current.set(number, ref)
-                    return (
-                        <Ball ref={ref} key={number} number={number} position={[x, y, 0]}/>
-                    )
-                })
+                        const ref = useRef<BallHandle>(null)
+                        ballRefs.current.set(number, ref)
+                        return (
+                            <Ball ref={ref} key={number} number={number} position={[x, y, 0]}/>
+                        )
+                    })
                 )}
             </mesh>
 
             <mesh position={[0, -3.2, 0]}>
                 <SortedPanel numbers={ball}/>
             </mesh>
+
         </mesh>
     )
 }

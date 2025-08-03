@@ -67,3 +67,48 @@ export default tseslint.config([
   },
 ])
 ```
+
+
+```js
+<Html position={[-5.8,0,0]} center className="">
+    <div className="card bg-base-200 w-96 card-lg shadow-sm h-57">
+        {/* <div className="fixed inset-0 bg-black/50 z-50 rounded-lg" /> */}
+        <div className="card-body">
+            <h2 className="card-title">Reiniciar o Bingo</h2>
+            <p>Todos os números serão apagados e não terá como recuperar, cuidado com essa ação!</p>
+            <div className="justify-end card-actions">
+            <button className="btn btn-lg btn-warning" onClick={handleBallClear}>Limpar</button>
+            </div>
+        </div>
+    </div>
+</Html>
+<Html position={[0,0,0]} center className="">
+    <div className="card bg-base-200 w-96 card-lg shadow-sm h-57">
+        <div className="card-body">
+            <h2 className="card-title">Sortear um novo Número</h2>
+            <p>Será sortenado um novo número aleatório e apresentado para todos.</p>
+            <div className="justify-end card-actions">
+            <button className="btn btn-lg btn-primary" onClick={handleRollNumber}>Sortear</button>
+            </div>
+        </div>
+    </div>
+</Html>
+<Html position={[5.8,0,0]} center className="">
+    <div className="card bg-base-200 w-96 card-sm shadow-sm h-25 mb-7">
+        <div className="card-body">
+            <h2 className="card-title">Zoom do Painel de Controle</h2>
+            <div className="justify-end card-actions">
+                <input type="range" min={0} max={200} value={ctrlZoomPanel} className="range range-neutrol" onMouseUp={handleReleaseZoom} onTouchEnd={handleReleaseZoom} onChange={(e) => setCtrlZoomPanel(Number(e.target.value))}/>
+            </div>
+        </div>
+    </div>
+    <div className="card bg-base-200 w-96 card-sm shadow-sm h-25">
+        <div className="card-body">
+            <h2 className="card-title">Zoom da Tela de Sorteio</h2>
+            <div className="justify-end card-actions">
+                <input type="range" min={0} max={200} value={sortedZoomPanel} className="range range-secondary" onMouseUp={handleReleaseZoom} onTouchEnd={handleReleaseZoom} onChange={(e) => setSortedZoomPanel(Number(e.target.value))}/>
+            </div>
+        </div>
+    </div>
+</Html>
+```

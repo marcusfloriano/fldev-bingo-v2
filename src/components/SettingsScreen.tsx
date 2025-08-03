@@ -2,26 +2,66 @@
 import * as THREE from 'three'
 import { useRef, useEffect, useState } from 'react'
 
-import { Html } from '@react-three/drei'
-import { Text } from '@react-three/drei'
+import { Text, Plane, Html } from '@react-three/drei'
 import type { ThreeElements } from '@react-three/fiber'
+
+import { RoundedPlane } from './base/RoundedPlane'
+import { SmallPanel } from './base/SmallPanel'
 
 import { LetterBingo } from './LetterBingo'
 import { Ball, type BallHandle } from './Ball'
+import { Buttom } from './base/Buttom'
+import { ZoomControl } from './base/ZoomControl'
 
 import { postBall, getBalls, postZoom, getZoom, postBallClear } from '../api'
 
-const handleBallClick = async (number: number) => {
-  try {
-    await postBall(number)
-  } catch (err) {
-    console.error('Erro ao enviar número:', err)
-  }
+function rollNewNumber(balls: number[]): number | null {
+    const allNumbers = Array.from({ length: 75 }, (_, i) => i + 1)
+    const remaining = allNumbers.filter(n => !balls.includes(n))
+
+    if (remaining.length === 0) return null // todos sorteados
+
+    // Fisher-Yates Shuffle
+    for (let i = remaining.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[remaining[i], remaining[j]] = [remaining[j], remaining[i]]
+    }
+
+    return remaining[0]
+}
+
+export function LastedNumbers() {
+  const numbers = Array.from({ length: 8 }, (_, i) => i + 1)
+  return (
+    <>
+        {numbers.map((number, index) => {
+                const x = index * 2.1 - (7 * 2.1) / 2
+                return (
+                    <>
+                        <RoundedPlane width={2} height={1.4} rounded={[0,0,0,0]} position={[x, 0, 0]} color='#008037' />
+                        <mesh position={[x, -0.1, 0]}>
+                            <Text
+                                fontSize={1.3}
+                                color="#F8B737"
+                                anchorX="center"
+                                anchorY="middle"
+                                font="/fonts/impact.ttf"
+                            >
+                                B-{number}
+                            </Text>
+                        </mesh>
+                    </>
+                )
+            }
+        )}
+    </>
+  )
 }
 
 export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
     const meshRef = useRef<THREE.Mesh>(null!)
     const ballRefs = useRef<Map<number, React.RefObject<BallHandle | null>>>(new Map())
+    const [balls, setBalls] = useState<number[]>([])
     const [ctrlZoomPanel, setCtrlZoomPanel] = useState(73)
     const [sortedZoomPanel, setSortedZoomPanel] = useState(73)
 
@@ -38,6 +78,7 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
 
     useEffect(() => {
         getBalls().then(data => {
+            setBalls(data.balls)
             data.balls.forEach((n) => {
                 const ref = ballRefs.current.get(n)
                 if (ref?.current) ref.current.activate()
@@ -51,6 +92,19 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
         })
         .catch(err => console.error('Erro ao carregar Zoom:', err))
     }, [])
+
+    useEffect(() => {
+        handleReleaseZoom()
+    }, [ctrlZoomPanel, sortedZoomPanel])
+
+    const handleBallClick = async (number: number) => {
+        try {
+            const data = await postBall(number)
+            setBalls(data.balls)
+        } catch (err) {
+            console.error('Erro ao enviar número:', err)
+        }
+    }
 
     const handleReleaseZoom = async () => {
         try {
@@ -71,6 +125,11 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
         }
     }
 
+    const handleRollNumber = async () => {
+        const sortedNumber = rollNewNumber(balls)
+        console.log(sortedNumber)
+    }
+
     return (
         <mesh
             {...props}
@@ -78,12 +137,12 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
         >
             <mesh position={[0, 4.35, 0]}>
                 <Text
-                position={[0, 0, 0]} // 👈 acima da cena
-                fontSize={0.7}
-                color="#D80100"
-                anchorX="center"
-                anchorY="middle"
-                font="/fonts/impact.ttf"
+                    position={[0, 0, 0]}
+                    fontSize={0.7}
+                    color="#D80100"
+                    anchorX="center"
+                    anchorY="middle"
+                    font="/fonts/impact.ttf"
                 >
                 PAINEL DE CONTROLE DO BINGO
                 </Text>
@@ -114,46 +173,64 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
             </mesh>
 
             <mesh position={[0, -3.2, 0]}>
-                <Html position={[-5.8,0,0]} center className="">
-                    <div className="card bg-base-200 w-96 card-lg shadow-sm  h-57">
-                        <div className="card-body">
-                            <h2 className="card-title">Reiniciar o Bingo</h2>
-                            <p>Todos os números serão apagados e não terá como recuperar, cuidado com essa ação!</p>
-                            <div className="justify-end card-actions">
-                            <button className="btn btn-lg btn-warning" onClick={handleBallClear}>Limpar</button>
-                            </div>
-                        </div>
-                    </div>
-                </Html>
-                <Html position={[0,0,0]} center className="">
-                    <div className="card bg-base-200 w-96 card-lg shadow-sm h-57">
-                        <div className="card-body">
-                            <h2 className="card-title">Sortear um novo Número</h2>
-                            <p>Será sortenado um novo número aleatório e apresentado para todos.</p>
-                            <div className="justify-end card-actions">
-                            <button className="btn btn-lg btn-primary">Sortear</button>
-                            </div>
-                        </div>
-                    </div>
-                </Html>
-               <Html position={[5.8,0,0]} center className="">
-                    <div className="card bg-base-200 w-96 card-sm shadow-sm h-25 mb-7">
-                        <div className="card-body">
-                            <h2 className="card-title">Zoom do Painel de Controle</h2>
-                            <div className="justify-end card-actions">
-                                <input type="range" min={0} max={200} value={ctrlZoomPanel} className="range range-neutrol" onMouseUp={handleReleaseZoom} onTouchEnd={handleReleaseZoom} onChange={(e) => setCtrlZoomPanel(Number(e.target.value))}/>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="card bg-base-200 w-96 card-sm shadow-sm h-25">
-                        <div className="card-body">
-                            <h2 className="card-title">Zoom da Tela de Sorteio</h2>
-                            <div className="justify-end card-actions">
-                                <input type="range" min={0} max={200} value={sortedZoomPanel} className="range range-secondary" onMouseUp={handleReleaseZoom} onTouchEnd={handleReleaseZoom} onChange={(e) => setSortedZoomPanel(Number(e.target.value))}/>
-                            </div>
-                        </div>
-                    </div>
-                </Html>
+
+                <mesh position={[-5.70, 0.08, 0]}>
+                    <SmallPanel number='O-68' fontSize={2.7} height={3.04} width={5.5} positionPanel={[0,0,0]} positionText={[0,-0.1,0]} rounded={[0, 0, 0.2, 0.2]}/>
+                </mesh>
+                <mesh position={[-1.3, 0.85, 0]}>
+                    <SmallPanel number='O-68' fontSize={1.5} height={1.5} width={3.1} positionPanel={[0,0,0]} positionText={[0,-0.1,0]}/>
+                </mesh>
+                <mesh position={[-1.3, -0.7, 0]}>
+                    <SmallPanel number='O-68' fontSize={1.5} height={1.5} width={3.1} positionPanel={[0,0,0]} positionText={[0,-0.1,0]}/>
+                </mesh>
+                <mesh position={[1.9, 0.85, 0]}>
+                    <SmallPanel number='O-68' fontSize={1.5} height={1.5} width={3.1} positionPanel={[0,0,0]} positionText={[0,-0.1,0]} rounded={[0.2, 0, 0, 0]}/>
+                </mesh>
+                <mesh position={[1.9, -0.7, 0]}>
+                    <SmallPanel number='O-68' fontSize={1.5} height={1.5} width={3.1} positionPanel={[0,0,0]} positionText={[0,-0.1,0]} rounded={[0, 0.2, 0, 0]}/>
+                </mesh>
+                <Buttom text='SORTE!' height={1.5} fontSize={0.8} color="#d90429" position={[4.9, 0.85, 0]} onClick={() => {}} />
+                <Buttom text='LIMPAR' height={1.5} fontSize={0.76} color="#00c2cb" fontColor='#024D50' position={[4.9, -0.7, 0]} onClick={() => {}} />
+                <ZoomControl 
+                    position={[7.4,0.55,0]} 
+                    number={ctrlZoomPanel}
+                    text='ZOOM CONTROLE' 
+                    onClick={(direction: 'top' | 'right' | 'bottom' | 'left') => { 
+                        if(direction == "left") {
+                            setCtrlZoomPanel(ctrlZoomPanel - 1)
+                        } else if(direction == "right") {
+                            setCtrlZoomPanel(ctrlZoomPanel + 1)
+                        }
+                    }}
+                />
+                <ZoomControl 
+                    position={[7.4,-0.9,0]} 
+                    number={sortedZoomPanel}
+                    text='ZOOM SORTEIO'
+                    color='#d90429'
+                    fontColor='#d90429'
+                    onClick={(direction: 'top' | 'right' | 'bottom' | 'left') => { 
+                        if(direction == "left") {
+                            setSortedZoomPanel(sortedZoomPanel - 1)
+                        } else if(direction == "right") {
+                            setSortedZoomPanel(sortedZoomPanel + 1)
+                        }
+                    }}
+                />
+            </mesh>
+
+            <mesh>
+                {/* <Plane
+                    args={[100, 100]} // cobre toda a tela
+                    position={[0, 0, 9.9]} // quase na frente da câmera (z = 10)
+                >
+                    <meshStandardMaterial
+                    color="black"
+                    transparent
+                    opacity={0.5} // 0.5 = 50% transparente
+                    />
+                </Plane> */}
+            {/* <SortedBall number={79} position={[0, 0, 0]} /> */}
             </mesh>
         </mesh>
     )

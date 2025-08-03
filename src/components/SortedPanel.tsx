@@ -1,54 +1,10 @@
 
 import * as THREE from 'three'
 import { useRef } from 'react'
-import type { ThreeElements, Vector3 } from '@react-three/fiber'
+import type { ThreeElements } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import { RoundedPlane } from './base/RoundedPlane'
-
-type SmallPanelProps = {
-    number: string
-    width?: number
-    height?: number
-    fontSize?: number
-    positionPanel: Vector3
-    positionText:Vector3
-    rounded?: [number, number, number, number]
-} & ThreeElements['mesh']
-
-function SmallPanel({ 
-    number = "",
-    width = 3,
-    height = 1.5,
-    fontSize = 1.4,
-    positionPanel = [0, 0, 0],
-    positionText = [0, 0, 0],
-    rounded = [0, 0, 0, 0],
-    ...props 
-}: SmallPanelProps) {
-    const meshRef = useRef<THREE.Mesh>(null!)
-
-    return (
-        <mesh
-            {...props}
-            ref={meshRef}
-        >
-            <mesh position={positionPanel}>
-                <RoundedPlane width={width} height={height} rounded={rounded} color='#008037' />
-            </mesh>
-            <mesh position={positionText}>
-                <Text
-                    fontSize={fontSize}
-                    color="#F8B737"
-                    anchorX="center"
-                    anchorY="middle"
-                    font="/fonts/impact.ttf"
-                >
-                    {number}
-                </Text>
-            </mesh>
-        </mesh>
-    )
-}
+import { SmallPanel } from './base/SmallPanel'
 
 type SortedPanelProps = {
     numbers: number[]
