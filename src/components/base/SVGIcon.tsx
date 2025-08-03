@@ -22,7 +22,7 @@ export function SVGIcon({
         <sphereGeometry args={[32,32,32]}/>
         <meshStandardMaterial color="#CCCCCC"/>
       </mesh> */}
-      <mesh position={[0,0,0]}>
+      <mesh position={[0,0,0]} {...props}>
         {paths.map((path, i) => (
           <group key={i} position={[0,0,0]}>
             {path.toShapes(false).map((shape, j) => {
@@ -39,7 +39,7 @@ export function SVGIcon({
             })}
           </group>
         ))}
-        <mesh position={[22, 22, 0]}>
+        <mesh position={[22, 22, 0]} {...props}>
           <planeGeometry args={[50,50]}/>
           <meshStandardMaterial color="#FFFFFF" transparent opacity={0}/>
         </mesh>

@@ -52,26 +52,35 @@ function App() {
     <Canvas style={{ background: 'transparent' }} gl={{ alpha: true }}>
       <pointLight position={[-10, -10, -10]} decay={0} intensity={Math.PI} />
       <ambientLight intensity={Math.PI / 1.5} />
-      <SVGIcon url='/svg/gear.svg' position={[8,4.6,0]} scale={0.007}
-        onPointerOver={() => {
-            document.body.style.cursor = 'pointer'
-        }}
-        onPointerOut={() => {
-            document.body.style.cursor = 'default'
-        }}
-        onClick={() => {setSettings(prev => !prev)}}
-      />
       <group>
         {showSettings && (
           <>
+            <SVGIcon url='/svg/gear.svg' position={[8,4.6,0]} scale={0.007}
+              onPointerOver={() => {
+                  document.body.style.cursor = 'pointer'
+              }}
+              onPointerOut={() => {
+                  document.body.style.cursor = 'default'
+              }}
+              onClick={() => {setSettings(prev => !prev)}}
+            />
             <OrthographicCamera makeDefault position={[0, 0, 10]} zoom={sortedZoomPanel} />
             <PrincipalScreen />
           </>
         )}
         {!showSettings && (
           <>
+            <SVGIcon url='/svg/gear.svg' position={[8,4.6,0]} scale={0.007}
+              onPointerOver={() => {
+                  document.body.style.cursor = 'pointer'
+              }}
+              onPointerOut={() => {
+                  document.body.style.cursor = 'default'
+              }}
+              onClick={() => {setSettings(prev => !prev)}}
+            />
             <OrthographicCamera makeDefault position={[0, 0, 10]} zoom={ctrlZoomPanel} />
-            <SettingsScreen />
+            <SettingsScreen position={[0,0,0]}/>
           </>
         )}
       </group>
