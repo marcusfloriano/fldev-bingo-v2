@@ -2,34 +2,67 @@
 import * as THREE from 'three'
 import { useRef, useEffect, useState } from 'react'
 import type { ThreeElements } from '@react-three/fiber'
-import { Text } from '@react-three/drei'
+import { Text, Plane } from '@react-three/drei'
 import { LetterBingo } from './LetterBingo'
 import { Ball, type BallHandle } from './Ball'
 import { SortedPanel } from './SortedPanel'
 import { connectWebSocket } from '../websocketClient'
+import { SortedBall } from './SortedBall'
 
 import { getBalls } from '../api'
 
-export function useWebSocket(onData: (type: string, number: number, balls: number[]) => void) {
+export function useWebSocket(onData: (type: string, number: number, balls: number[], sorted: boolean) => void) {
   useEffect(() => {
     connectWebSocket('principal', 'ws://localhost:3001', (data) => {
         if(data.action == "balls") {
-            onData(data.type, data.number, data.balls)
+            onData(data.type, data.number, data.balls, data.sorted)
         }
     })
   }, [onData])
+}
+
+function getBingoLetter(number: number): string {
+    if(number <= 15) {
+        return "B-"+number
+    } else if (number <= 30) {
+        return "I-"+number
+    } else if (number <= 45) {
+        return "N-"+number
+    } else if (number <= 60) {
+        return "G-"+number
+    } else if (number <= 75) {
+        return "O-"+number
+    }
+    return ""
 }
 
 export function PrincipalScreen({ ...props }: ThreeElements['mesh']) {
     const meshRef = useRef<THREE.Mesh>(null!)
     const ballRefs = useRef<Map<number, React.RefObject<BallHandle | null>>>(new Map())
     const [ball, setBalls] = useState<number[]>([])
+    const [roll, setRoll] = useState(false)
+    const [sortedBall, setSortedBall] = useState("?")
+    const [animatedBall, setAnimatedBall] = useState(true)
 
-    useWebSocket((type, number, balls) => {
-        setBalls(balls)
+
+    useWebSocket((type, number, balls, sorted) => {
         const ref = ballRefs.current.get(number)
         if(type == "added") {
-            if (ref?.current) ref.current.activate()
+            if(sorted) {
+                setRoll(true)
+                setAnimatedBall(true)
+                setSortedBall("?")
+                setTimeout(() => {
+                    setAnimatedBall(false)
+                    setSortedBall(getBingoLetter(number))
+                    setBalls(balls)
+                }, 3000)
+                setTimeout(() => {
+                    setRoll(false)
+                }, 6000)
+            } else {
+                if (ref?.current) ref.current.activate()
+            }
         } else if (type == "removed") {
             if (ref?.current) ref.current.deactivate()
         } else if(type == "cleared") {
@@ -105,6 +138,22 @@ export function PrincipalScreen({ ...props }: ThreeElements['mesh']) {
             <mesh position={[0, -3.2, 0]}>
                 <SortedPanel numbers={ball}/>
             </mesh>
+
+            {roll && (
+                <group>
+                    <Plane
+                        args={[100, 100]} // cobre toda a tela
+                        position={[0, 0, 2]} // quase na frente da câmera (z = 10)
+                    >
+                        <meshStandardMaterial
+                        color="black"
+                        transparent
+                        opacity={0.5} // 0.5 = 50% transparente
+                        />
+                    </Plane>
+                    <SortedBall rotation={[0,0.8,0]} number={sortedBall} position={[0, 1.5, 3]} scale={0.7} animated={animatedBall}/>
+                </group>
+            )}
 
         </mesh>
     )

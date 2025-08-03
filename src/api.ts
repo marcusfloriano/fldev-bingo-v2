@@ -29,7 +29,7 @@ export async function apiRequest<T>(
 
 // Chamadas específicas (opcional)
 export const getBalls = () => apiRequest<{ balls: number[] }>('/balls', 'GET')
-export const postBall = (number: number) => apiRequest<{ balls: number[] }>('/balls', 'POST', { number })
+export const postBall = (number: number, sorted: boolean) => apiRequest<{ balls: number[] }>('/balls', 'POST', { number, sorted })
 export const getZoom = () => apiRequest<{ ctrlZoomPanel: number, sortedZoomPanel: number }>('/zoom', 'GET')
 export const postZoom = (ctrlZoomPanel: number, sortedZoomPanel: number) => apiRequest<{ action: string, ctrlZoomPanel: number, sortedZoomPanel: number }>('/zoom', 'POST', { ctrlZoomPanel, sortedZoomPanel })
 export const postBallClear = () => apiRequest<{ action: string }>('/balls/clear', 'POST', {})

@@ -8,6 +8,8 @@ import { PrincipalScreen } from './components/PrincipalScreen'
 import { SettingsScreen } from './components/SettingsScreen'
 import { useGlobalShortcut } from './hooks/useGlobalShortcut'
 
+import { SVGIcon } from './components/base/SVGIcon'
+
 import { connectWebSocket } from './websocketClient'
 import { getZoom } from './api'
 
@@ -50,7 +52,15 @@ function App() {
     <Canvas>
       <pointLight position={[-10, -10, -10]} decay={0} intensity={Math.PI} />
       <ambientLight intensity={Math.PI / 1.5} />
-      
+      <SVGIcon url='/svg/gear.svg' position={[8,4.6,0]} scale={0.007}
+        onPointerOver={() => {
+            document.body.style.cursor = 'pointer'
+        }}
+        onPointerOut={() => {
+            document.body.style.cursor = 'default'
+        }}
+        onClick={() => {setSettings(prev => !prev)}}
+      />
       <group>
         {showSettings && (
           <>
@@ -65,17 +75,6 @@ function App() {
           </>
         )}
       </group>
-      {/* <Plane
-        args={[100, 100]} // cobre toda a tela
-        position={[0, 0, 9.9]} // quase na frente da câmera (z = 10)
-      >
-        <meshStandardMaterial
-          color="black"
-          transparent
-          opacity={0.5} // 0.5 = 50% transparente
-        />
-      </Plane> */}
-      {/* <SortedBall number={79} position={[0, 0, 0]} /> */}
 
     </Canvas>
   )

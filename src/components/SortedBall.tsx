@@ -51,7 +51,7 @@ export function SortedBall({ number = '1', animated = true, ...props }: ThreeEle
 
     useFrame(() => {
         if (meshRef.current && animated) {
-            meshRef.current.rotation.y += 0.1
+            meshRef.current.rotation.y += 0.02
             // meshRef.current.rotation.x += 0.06
         } else {
             meshRef.current.rotation.y = 0.8    

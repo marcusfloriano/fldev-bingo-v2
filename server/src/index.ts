@@ -41,7 +41,7 @@ app.get('/balls', async (req, res) => {
 })
 
 app.post('/balls', async (req, res) => {
-  const { number } = req.body
+  const { number, sorted } = req.body
 
   if (typeof number !== 'number') {
     return res.status(400).json({ error: 'Número inválido' })
@@ -52,12 +52,12 @@ app.post('/balls', async (req, res) => {
   if (!ball) {
     await addBall(number)
     const balls = await getBalls()
-    broadcast({ action: 'balls', type: 'added', number, balls: balls })
+    broadcast({ action: 'balls', type: 'added', number, balls: balls, sorted: sorted})
     return res.json({ action: 'added', balls })
   } else {
     await removeBall(number)
     const balls = await getBalls()
-    broadcast({ action: 'balls', type: 'removed', number, balls: balls })
+    broadcast({ action: 'balls', type: 'removed', number, balls: balls, sorted: sorted })
     return res.json({ action: 'removed', balls })
   }
 })

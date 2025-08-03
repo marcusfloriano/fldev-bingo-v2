@@ -1,7 +1,7 @@
 
 import * as THREE from 'three'
-import { useRef, useEffect, useState, use } from 'react'
-
+import { useRef, useEffect, useState } from 'react'
+import { useThree } from '@react-three/fiber'
 import { Text, Plane } from '@react-three/drei'
 import type { ThreeElements } from '@react-three/fiber'
 import { useFrame } from '@react-three/fiber'
@@ -50,6 +50,8 @@ function getBingoLetter(number: number): string {
 export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
     const meshRef = useRef<THREE.Mesh>(null!)
     const ballRefs = useRef<Map<number, React.RefObject<BallHandle | null>>>(new Map())
+    const { camera } = useThree()
+    const soundRef = useRef<THREE.Audio | null>(null)
     const [balls, setBalls] = useState<number[]>([])
     const [ctrlZoomPanel, setCtrlZoomPanel] = useState(73)
     const [sortedZoomPanel, setSortedZoomPanel] = useState(73)
@@ -92,9 +94,34 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
         }
     })
 
+    useEffect(() => {
+        const listener = new THREE.AudioListener()
+        camera.add(listener)
+
+        const sound = new THREE.Audio(listener)
+        const loader = new THREE.AudioLoader()
+
+        loader.load('/sounds/roleta.mp3', (buffer) => {
+            sound.setBuffer(buffer)
+            sound.setLoop(false)
+            sound.setVolume(1.5)
+        })
+
+        soundRef.current = sound
+
+        return () => {
+        sound.stop()
+        camera.remove(listener)
+        }
+    }, [camera])
+
+    const playSound = () => {
+        soundRef.current?.play()
+    }
+
     const handleBallClick = async (number: number) => {
         try {
-            const data = await postBall(number)
+            const data = await postBall(number, false)
             setBalls(data.balls)
         } catch (err) {
             console.error('Erro ao enviar número:', err)
@@ -125,13 +152,14 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
         const sortedNumber = rollNewNumber(balls)
         if(sortedNumber) {
             try {
-                const data = await postBall(sortedNumber)
+                const data = await postBall(sortedNumber, true)
                 const ref = ballRefs.current.get(sortedNumber)
                 if (ref?.current) ref.current.activate()
                 setAnimatedBall(false)
                 setBalls(data.balls)
                 setRoll(true)
                 setSortedBall(getBingoLetter(sortedNumber))
+                playSound()
                 setTimeout(() => {
                     setSortedBall(getBingoLetter(sortedNumber))
                     setAnimatedBall(false)
