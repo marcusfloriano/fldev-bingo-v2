@@ -2,10 +2,9 @@
 import * as THREE from 'three'
 import { useRef, useEffect, useState } from 'react'
 
-import { Text, Plane, Html } from '@react-three/drei'
+import { Text } from '@react-three/drei'
 import type { ThreeElements } from '@react-three/fiber'
 
-import { RoundedPlane } from './base/RoundedPlane'
 import { SmallPanel } from './base/SmallPanel'
 
 import { LetterBingo } from './LetterBingo'
@@ -30,32 +29,19 @@ function rollNewNumber(balls: number[]): number | null {
     return remaining[0]
 }
 
-export function LastedNumbers() {
-  const numbers = Array.from({ length: 8 }, (_, i) => i + 1)
-  return (
-    <>
-        {numbers.map((number, index) => {
-                const x = index * 2.1 - (7 * 2.1) / 2
-                return (
-                    <>
-                        <RoundedPlane width={2} height={1.4} rounded={[0,0,0,0]} position={[x, 0, 0]} color='#008037' />
-                        <mesh position={[x, -0.1, 0]}>
-                            <Text
-                                fontSize={1.3}
-                                color="#F8B737"
-                                anchorX="center"
-                                anchorY="middle"
-                                font="/fonts/impact.ttf"
-                            >
-                                B-{number}
-                            </Text>
-                        </mesh>
-                    </>
-                )
-            }
-        )}
-    </>
-  )
+function getBingoLetter(number: number): string {
+    if(number <= 15) {
+        return "B-"+number
+    } else if (number <= 30) {
+        return "I-"+number
+    } else if (number <= 45) {
+        return "N-"+number
+    } else if (number <= 60) {
+        return "G-"+number
+    } else if (number <= 75) {
+        return "O-"+number
+    }
+    return ""
 }
 
 export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
@@ -93,10 +79,6 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
         .catch(err => console.error('Erro ao carregar Zoom:', err))
     }, [])
 
-    useEffect(() => {
-        handleReleaseZoom()
-    }, [ctrlZoomPanel, sortedZoomPanel])
-
     const handleBallClick = async (number: number) => {
         try {
             const data = await postBall(number)
@@ -106,9 +88,9 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
         }
     }
 
-    const handleReleaseZoom = async () => {
+    const handleReleaseZoom = async (ctrl: number, panel: number) => {
         try {
-            await postZoom(ctrlZoomPanel, sortedZoomPanel)
+            await postZoom(ctrl, panel)
         } catch (err) {
             console.error('Erro ao enviar número:', err)
         }
@@ -120,6 +102,7 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
             ballRefs.current.forEach((ref) => {
                 if (ref.current) ref.current.deactivate()
             })
+            setBalls([])
         } catch (err) {
             console.error('Erro ao limpar todas as marcações', err)
         }
@@ -175,30 +158,32 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
             <mesh position={[0, -3.2, 0]}>
 
                 <mesh position={[-5.70, 0.08, 0]}>
-                    <SmallPanel number='O-68' fontSize={2.7} height={3.04} width={5.5} positionPanel={[0,0,0]} positionText={[0,-0.1,0]} rounded={[0, 0, 0.2, 0.2]}/>
+                    <SmallPanel number={getBingoLetter(balls[balls.length-1])} fontSize={2.7} height={3.04} width={5.5} positionPanel={[0,0,0]} positionText={[0,-0.1,0]} rounded={[0, 0, 0.2, 0.2]}/>
                 </mesh>
                 <mesh position={[-1.3, 0.85, 0]}>
-                    <SmallPanel number='O-68' fontSize={1.5} height={1.5} width={3.1} positionPanel={[0,0,0]} positionText={[0,-0.1,0]}/>
+                    <SmallPanel number={getBingoLetter(balls[balls.length-2])} fontSize={1.5} height={1.5} width={3.1} positionPanel={[0,0,0]} positionText={[0,-0.1,0]}/>
                 </mesh>
                 <mesh position={[-1.3, -0.7, 0]}>
-                    <SmallPanel number='O-68' fontSize={1.5} height={1.5} width={3.1} positionPanel={[0,0,0]} positionText={[0,-0.1,0]}/>
+                    <SmallPanel number={getBingoLetter(balls[balls.length-3])} fontSize={1.5} height={1.5} width={3.1} positionPanel={[0,0,0]} positionText={[0,-0.1,0]}/>
                 </mesh>
                 <mesh position={[1.9, 0.85, 0]}>
-                    <SmallPanel number='O-68' fontSize={1.5} height={1.5} width={3.1} positionPanel={[0,0,0]} positionText={[0,-0.1,0]} rounded={[0.2, 0, 0, 0]}/>
+                    <SmallPanel number={getBingoLetter(balls[balls.length-4])} fontSize={1.5} height={1.5} width={3.1} positionPanel={[0,0,0]} positionText={[0,-0.1,0]} rounded={[0.2, 0, 0, 0]}/>
                 </mesh>
                 <mesh position={[1.9, -0.7, 0]}>
-                    <SmallPanel number='O-68' fontSize={1.5} height={1.5} width={3.1} positionPanel={[0,0,0]} positionText={[0,-0.1,0]} rounded={[0, 0.2, 0, 0]}/>
+                    <SmallPanel number={getBingoLetter(balls[balls.length-5])} fontSize={1.5} height={1.5} width={3.1} positionPanel={[0,0,0]} positionText={[0,-0.1,0]} rounded={[0, 0.2, 0, 0]}/>
                 </mesh>
                 <Buttom text='SORTE!' height={1.5} fontSize={0.8} color="#d90429" position={[4.9, 0.85, 0]} onClick={() => {}} />
-                <Buttom text='LIMPAR' height={1.5} fontSize={0.76} color="#00c2cb" fontColor='#024D50' position={[4.9, -0.7, 0]} onClick={() => {}} />
+                <Buttom text='LIMPAR' height={1.5} fontSize={0.76} color="#00c2cb" fontColor='#024D50' position={[4.9, -0.7, 0]} onClick={() => {handleBallClear()}} />
                 <ZoomControl 
                     position={[7.4,0.55,0]} 
                     number={ctrlZoomPanel}
                     text='ZOOM CONTROLE' 
                     onClick={(direction: 'top' | 'right' | 'bottom' | 'left') => { 
                         if(direction == "left") {
+                            handleReleaseZoom(ctrlZoomPanel - 1, sortedZoomPanel)
                             setCtrlZoomPanel(ctrlZoomPanel - 1)
                         } else if(direction == "right") {
+                            handleReleaseZoom(ctrlZoomPanel + 1, sortedZoomPanel)
                             setCtrlZoomPanel(ctrlZoomPanel + 1)
                         }
                     }}
@@ -211,8 +196,10 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
                     fontColor='#d90429'
                     onClick={(direction: 'top' | 'right' | 'bottom' | 'left') => { 
                         if(direction == "left") {
+                            handleReleaseZoom(ctrlZoomPanel, sortedZoomPanel - 1)
                             setSortedZoomPanel(sortedZoomPanel - 1)
                         } else if(direction == "right") {
+                            handleReleaseZoom(ctrlZoomPanel, sortedZoomPanel + 1)
                             setSortedZoomPanel(sortedZoomPanel + 1)
                         }
                     }}

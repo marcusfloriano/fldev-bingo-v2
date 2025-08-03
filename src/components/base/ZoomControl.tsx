@@ -24,12 +24,13 @@ export function ZoomControl({
     fontColor = '#FF5733',
     position = [0, 0, 0], 
     color = '#FF5733',
-    onClick
+    onClick,
+    ...props
 }: ZoomControlProps) {
   const groupRef = useRef<THREE.Group>(null!)
 
   return (
-    <group ref={groupRef} position={position}>
+    <group ref={groupRef} position={position} {...props}>
       <Text
           position={[0,0.5,0]}
           fontSize={fontSize * 0.6}
