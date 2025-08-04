@@ -1,17 +1,19 @@
 
 import { useState, useEffect } from 'react'
 
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { OrthographicCamera, Plane } from '@react-three/drei'
+import { Canvas } from '@react-three/fiber'
+import { OrthographicCamera } from '@react-three/drei'
 
 import { PrincipalScreen } from './components/PrincipalScreen'
-import { SettingsScreen } from './components/SettingsScreen'
+import { ControlScreen } from './components/ControlScreen'
 import { useGlobalShortcut } from './hooks/useGlobalShortcut'
 
 import { SVGIcon } from './components/base/SVGIcon'
 
 import { connectWebSocket } from './websocketClient'
 import { getZoom } from './api'
+
+import { Settings } from './components/settings/Settings'
 
 import './App.css'
 
@@ -27,7 +29,7 @@ export function useWebSocket(onData: (ctrlZoomPanel: number, sortedZoomPanel: nu
 
 function App() {
 
-  const [showSettings, setSettings] = useState(true)
+  const [showSettings, setSettings] = useState(false)
   const [ctrlZoomPanel, setCtrlZoomPanel] = useState(73)
   const [sortedZoomPanel, setSortedZoomPanel] = useState(73)
 
@@ -49,43 +51,46 @@ function App() {
     }, [])
 
   return (
-    <Canvas style={{ background: 'transparent' }} gl={{ alpha: true }}>
-      <pointLight position={[-10, -10, -10]} decay={0} intensity={Math.PI} />
-      <ambientLight intensity={Math.PI / 1.5} />
-      <group>
-        {showSettings && (
-          <>
-            <SVGIcon url='/svg/gear.svg' position={[8,4.6,0]} scale={0.007}
-              onPointerOver={() => {
-                  document.body.style.cursor = 'pointer'
-              }}
-              onPointerOut={() => {
-                  document.body.style.cursor = 'default'
-              }}
-              onClick={() => {setSettings(prev => !prev)}}
-            />
-            <OrthographicCamera makeDefault position={[0, 0, 10]} zoom={sortedZoomPanel} />
-            <PrincipalScreen />
-          </>
-        )}
-        {!showSettings && (
-          <>
-            <SVGIcon url='/svg/gear.svg' position={[8,4.6,0]} scale={0.007}
-              onPointerOver={() => {
-                  document.body.style.cursor = 'pointer'
-              }}
-              onPointerOut={() => {
-                  document.body.style.cursor = 'default'
-              }}
-              onClick={() => {setSettings(prev => !prev)}}
-            />
-            <OrthographicCamera makeDefault position={[0, 0, 10]} zoom={ctrlZoomPanel} />
-            <SettingsScreen position={[0,0,0]}/>
-          </>
-        )}
-      </group>
+    <>
+      {showSettings && (<Settings />)}
+      <Canvas style={{ background: 'transparent' }} gl={{ alpha: true }}>
+        <pointLight position={[-10, -10, -10]} decay={0} intensity={Math.PI} />
+        <ambientLight intensity={Math.PI / 1.5} />
+        <group>
+          {!showSettings && (
+            <>
+              <SVGIcon url='/svg/gear.svg' position={[8,4.6,0]} scale={0.007}
+                onPointerOver={() => {
+                    document.body.style.cursor = 'pointer'
+                }}
+                onPointerOut={() => {
+                    document.body.style.cursor = 'default'
+                }}
+                onClick={() => {setSettings(prev => !prev)}}
+              />
+              <OrthographicCamera makeDefault position={[0, 0, 10]} zoom={sortedZoomPanel} />
+              <PrincipalScreen />
+            </>
+          )}
+          {showSettings && (
+            <>
+              <SVGIcon url='/svg/gear.svg' position={[8,4.6,0]} scale={0.007}
+                onPointerOver={() => {
+                    document.body.style.cursor = 'pointer'
+                }}
+                onPointerOut={() => {
+                    document.body.style.cursor = 'default'
+                }}
+                onClick={() => {setSettings(prev => !prev)}}
+              />
+              <OrthographicCamera makeDefault position={[0, 0, 10]} zoom={ctrlZoomPanel} />
+              <ControlScreen position={[0,0,0]}/>
+            </>
+          )}
+        </group>
 
-    </Canvas>
+      </Canvas>
+    </>
   )
 }
 

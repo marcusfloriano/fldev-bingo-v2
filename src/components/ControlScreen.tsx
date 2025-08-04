@@ -47,17 +47,23 @@ function getBingoLetter(number: number): string {
     return ""
 }
 
-export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
+export function ControlScreen({ ...props }: ThreeElements['mesh']) {
+    const { camera } = useThree()
+    const listener = new THREE.AudioListener()
+    camera.add(listener)
+    const sound = new THREE.Audio(listener)
+    let url: string = ""
+
     const meshRef = useRef<THREE.Mesh>(null!)
     const ballRefs = useRef<Map<number, React.RefObject<BallHandle | null>>>(new Map())
-    const { camera } = useThree()
-    const soundRef = useRef<THREE.Audio | null>(null)
+
     const [balls, setBalls] = useState<number[]>([])
     const [ctrlZoomPanel, setCtrlZoomPanel] = useState(73)
     const [sortedZoomPanel, setSortedZoomPanel] = useState(73)
     const [scaleSortedBall, setScaleSortedBall] = useState(1)
     const [roll, setRoll] = useState(false)
     const [sortedBall, setSortedBall] = useState("?")
+    const [sortedMusic, setSortedMusic] = useState(true)
     const [animatedBall, setAnimatedBall] = useState(true)
 
     const ALL_NUMBERS = [
@@ -95,14 +101,11 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
     })
 
     const playSound = () => {
-        const listener = new THREE.AudioListener()
-        camera.add(listener)
-
-        const sound = new THREE.Audio(listener)
+        if(!sortedMusic) return
         const loader = new THREE.AudioLoader()
 
         const sorteio = Math.floor(Math.random() * 5) + 1
-        const url = `/sounds/musica-roleta-${sorteio}.mp3`
+        url = `/sounds/musica-roleta-${sorteio}.mp3`
 
         loader.load(url, (buffer) => {
             sound.setBuffer(buffer)
@@ -116,6 +119,38 @@ export function SettingsScreen({ ...props }: ThreeElements['mesh']) {
             }
         })
     }
+
+    const playSong = (song: string) => {
+        const loader = new THREE.AudioLoader()
+        if(url === `/sounds/instants/${song}`) {
+            sound.stop()
+            url = ""
+        } else {
+            url = `/sounds/instants/${song}`
+            loader.load(url, (buffer) => {
+                sound.stop()
+                sound.setBuffer(buffer)
+                sound.setLoop(false)
+                sound.setVolume(1.5)
+                sound.play()
+
+                // Remover listener depois de tocar
+                sound.onEnded = () => {
+                    camera.remove(listener)
+                    url = ""
+                }
+            })
+        }
+    }
+
+    const toggleSortedMusic = (toggle: boolean) => {
+        setSortedMusic(toggle)
+    }
+
+    useEffect(() => {
+        (window as any).toggleSortedMusic = toggleSortedMusic;
+        (window as any).playSoundFromUI = playSong;
+    }, [])
 
     const handleBallClick = async (number: number) => {
         try {
