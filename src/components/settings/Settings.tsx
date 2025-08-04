@@ -1,6 +1,22 @@
 
 import { useControls, Leva, button } from 'leva'
+
 import { useEffect } from 'react'
+
+const theme = {
+    colors: {
+        elevation1: '#008037',
+        elevation2: '#01461fff',
+        elevation3: '#02602bff',
+        accent1: '#D80100',
+        accent2: '#c04444ff',
+        accent3: '#c78080ff',
+        highlight1: '#2e533fff',
+        highlight2: '#aac1b4ff',
+        highlight3: '#FEFEFE',
+        vivid1: '#ffcc00',
+    }
+}
 
 export function Settings({}) {
 
@@ -68,6 +84,6 @@ export function Settings({}) {
             "Para nossa Alegria": button(() => (window as any).playSoundFromUI('meme/meme-para-nossa-alegria.mp3')),
         }, {collapsed: true})
     return (
-        <Leva collapsed={true} oneLineLabels={true} />
+        <Leva theme={theme} collapsed={true} oneLineLabels={true} />
     )
 }
