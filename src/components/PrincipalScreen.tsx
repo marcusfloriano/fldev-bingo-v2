@@ -8,6 +8,7 @@ import { Ball, type BallHandle } from './Ball'
 import { SortedPanel } from './SortedPanel'
 import { connectWebSocket } from '../websocketClient'
 import { SortedBall } from './SortedBall'
+import { NewsPanel } from './NewsPanel'
 
 import { getBalls } from '../api'
 
@@ -39,7 +40,7 @@ function getBingoLetter(number: number): string {
 export function PrincipalScreen({ ...props }: ThreeElements['mesh']) {
     const meshRef = useRef<THREE.Mesh>(null!)
     const ballRefs = useRef<Map<number, React.RefObject<BallHandle | null>>>(new Map())
-    const [ball, setBalls] = useState<number[]>([])
+    const [balls, setBalls] = useState<number[]>([])
     const [roll, setRoll] = useState(false)
     const [sortedBall, setSortedBall] = useState("?")
     const [animatedBall, setAnimatedBall] = useState(true)
@@ -136,10 +137,18 @@ export function PrincipalScreen({ ...props }: ThreeElements['mesh']) {
                     })
                 )}
             </mesh>
+            
+            {balls.length > 0 && (
+                <mesh position={[0, -3.2, 0]}>
+                    <SortedPanel numbers={balls}/>
+                </mesh>
+            )}
 
-            <mesh position={[0, -3.2, 0]}>
-                <SortedPanel numbers={ball}/>
-            </mesh>
+            {balls.length == 0 && (
+                <mesh position={[0, -2, 0]}>
+                    <NewsPanel />
+                </mesh>
+            )}
 
             {roll && (
                 <group>

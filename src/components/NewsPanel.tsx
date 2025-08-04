@@ -20,7 +20,7 @@ export function NewsPanel({ ...props }: ThreeElements['mesh'] ) {
                 anchorY="middle"
                 font="/fonts/impact.ttf"
             >
-                SEJAM BEM VINDO AO BINGO
+                SEJAM BEM VINDO AO BINGO!!!
             </Text>
             <Text
                 position={[0, -1, 0]}
