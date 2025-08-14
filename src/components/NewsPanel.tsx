@@ -30,7 +30,7 @@ export function NewsPanel({ ...props }: ThreeElements['mesh'] ) {
                 anchorY="middle"
                 font="/fonts/impact.ttf"
             >
-                AGUARDEM A PRÓXIMA RODADA
+                COMPREM A CARTELA PARA A PRÓXIMA RODADA
             </Text>
             <Text
                 position={[0, -2, 0]}
