@@ -56,6 +56,7 @@ export function PrincipalScreen({ ...props }: ThreeElements['mesh']) {
                 setTimeout(() => {
                     setAnimatedBall(false)
                     setSortedBall(getBingoLetter(number))
+                    if (ref?.current) ref.current.activate()
                     setBalls(balls)
                 }, 3000)
                 setTimeout(() => {
