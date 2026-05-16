@@ -14,7 +14,8 @@ import { getBalls } from '../api'
 
 export function useWebSocket(onData: (type: string, number: number, balls: number[], sorted: boolean) => void) {
   useEffect(() => {
-    connectWebSocket('principal', 'ws://localhost:3001', (data) => {
+    const wsUrl = import.meta.env.VITE_WS_URL ?? `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`
+    connectWebSocket('principal', wsUrl, (data) => {
         if(data.action == "balls") {
             onData(data.type, data.number, data.balls, data.sorted)
         }

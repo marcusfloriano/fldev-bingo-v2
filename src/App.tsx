@@ -19,7 +19,8 @@ import './App.css'
 
 export function useWebSocket(onData: (ctrlZoomPanel: number, sortedZoomPanel: number) => void) {
   useEffect(() => {
-    connectWebSocket('zoom', 'ws://localhost:3001', (data) => {
+    const wsUrl = import.meta.env.VITE_WS_URL ?? `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`
+    connectWebSocket('zoom', wsUrl, (data) => {
         if(data.action == "zoom") {
             onData(data.ctrlZoomPanel, data.sortedZoomPanel)
         }
