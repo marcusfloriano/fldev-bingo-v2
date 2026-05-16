@@ -8,7 +8,7 @@ import {
   initDB, getBalls, getBall, addBall, removeBall,
   getZoom, setZoom,
   clearBalls
-} from './db.ts'
+} from './db.js'
 
 const app = express()
 const PORT = 3001

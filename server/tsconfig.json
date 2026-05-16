@@ -10,7 +10,6 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
-    "allowImportingTsExtensions": true,
   },
   "ts-node": {
     "esm": true
