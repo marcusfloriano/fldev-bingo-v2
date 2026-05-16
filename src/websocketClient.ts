@@ -22,7 +22,7 @@ export function connectWebSocket(channel: string, url: string, onMessage: Messag
 
     socket.addEventListener('message', (event) => {
       const data = JSON.parse(event.data)
-      channels.forEach((handler, key) => {
+      channels.forEach((handler) => {
         handler(data)
       })
     })

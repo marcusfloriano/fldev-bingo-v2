@@ -1,5 +1,8 @@
 {
-  "balls": [],
-  "ctrlZoomPanel": 66,
-  "sortedZoomPanel": 71
+  "balls": [
+    74,
+    39
+  ],
+  "ctrlZoomPanel": 78,
+  "sortedZoomPanel": 97
 }
