@@ -65,7 +65,7 @@ All calls go to `http://localhost:3001`. Key endpoints:
 `Settings` renders as a regular DOM overlay (outside the Three.js Canvas). It communicates with `ControlScreen`'s Three.js audio via the `window.*` globals registered in a `useEffect`.
 
 ### Persistence
-`server/src/db.json` is the live database — it is excluded from Vite's file watcher to prevent hot-reload loops. The file is committed (it is the running state); reset it manually or via `POST /balls/clear` + `POST /zoom`.
+`server/src/db.json` is the live database (in dev) — it is excluded from Vite's file watcher to prevent hot-reload loops. It is **not** committed (gitignored) to avoid deploy conflicts on `git pull`; lowdb auto-creates it from defaults on first write, or copy `server/src/db.example.json` to seed it. In production the live state lives in `server/dist/db.json` (also gitignored). Reset state manually or via `POST /balls/clear` + `POST /zoom`.
 
 ### Environment variables (`src/api.ts`, `src/App.tsx`, `src/components/PrincipalScreen.tsx`)
 - `VITE_API_URL` — base URL for REST calls (empty = relative path, routed by Nginx)

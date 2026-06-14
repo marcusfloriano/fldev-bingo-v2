@@ -49,13 +49,17 @@ function getBingoLetter(number: number): string {
 
 export function ControlScreen({ ...props }: ThreeElements['mesh']) {
     const { camera } = useThree()
-    const listener = new THREE.AudioListener()
-    camera.add(listener)
-    const sound = new THREE.Audio(listener)
-    let url: string = ""
+    // Criados uma única vez (não a cada render) e anexados/removidos da câmera no useEffect abaixo.
+    const listenerRef = useRef<THREE.AudioListener | null>(null)
+    const soundRef = useRef<THREE.Audio | null>(null)
+    const urlRef = useRef<string>("")
+    if (!listenerRef.current) {
+        listenerRef.current = new THREE.AudioListener()
+        soundRef.current = new THREE.Audio(listenerRef.current)
+    }
 
     const meshRef = useRef<THREE.Mesh>(null!)
-    const ballRefs = useRef<Map<number, React.RefObject<BallHandle | null>>>(new Map())
+    const ballRefs = useRef<Map<number, BallHandle>>(new Map())
 
     const [balls, setBalls] = useState<number[]>([])
     const [ctrlZoomPanel, setCtrlZoomPanel] = useState(73)
@@ -81,8 +85,7 @@ export function ControlScreen({ ...props }: ThreeElements['mesh']) {
         getBalls().then(data => {
             setBalls(data.balls)
             data.balls.forEach((n) => {
-                const ref = ballRefs.current.get(n)
-                if (ref?.current) ref.current.activate()
+                ballRefs.current.get(n)?.activate()
             })
         })
         .catch(err => console.error('Erro ao carregar bolas:', err))
@@ -100,45 +103,43 @@ export function ControlScreen({ ...props }: ThreeElements['mesh']) {
         }
     })
 
+    // Anexa o listener de áudio à câmera enquanto a tela existe e remove ao desmontar.
+    useEffect(() => {
+        const listener = listenerRef.current!
+        camera.add(listener)
+        return () => { camera.remove(listener) }
+    }, [camera])
+
     const playSound = () => {
         if(!sortedMusic) return
         const loader = new THREE.AudioLoader()
+        const sound = soundRef.current!
 
         const sorteio = Math.floor(Math.random() * 5) + 1
-        url = `/sounds/musica-roleta-${sorteio}.mp3`
+        urlRef.current = `/sounds/musica-roleta-${sorteio}.mp3`
 
-        loader.load(url, (buffer) => {
+        loader.load(urlRef.current, (buffer) => {
             sound.setBuffer(buffer)
             sound.setLoop(false)
             sound.setVolume(1.5)
             sound.play()
-
-            // Remover listener depois de tocar
-            sound.onEnded = () => {
-            camera.remove(listener)
-            }
         })
     }
 
     const playSong = (song: string) => {
         const loader = new THREE.AudioLoader()
-        if(url === `/sounds/instants/${song}`) {
+        const sound = soundRef.current!
+        if(urlRef.current === `/sounds/instants/${song}`) {
             sound.stop()
-            url = ""
+            urlRef.current = ""
         } else {
-            url = `/sounds/instants/${song}`
-            loader.load(url, (buffer) => {
+            urlRef.current = `/sounds/instants/${song}`
+            loader.load(urlRef.current, (buffer) => {
                 sound.stop()
                 sound.setBuffer(buffer)
                 sound.setLoop(false)
                 sound.setVolume(1.5)
                 sound.play()
-
-                // Remover listener depois de tocar
-                sound.onEnded = () => {
-                    camera.remove(listener)
-                    url = ""
-                }
             })
         }
     }
@@ -172,9 +173,7 @@ export function ControlScreen({ ...props }: ThreeElements['mesh']) {
     const handleBallClear = async () => {
         try {
             await postBallClear()
-            ballRefs.current.forEach((ref) => {
-                if (ref.current) ref.current.deactivate()
-            })
+            ballRefs.current.forEach((b) => b.deactivate())
             setBalls([])
         } catch (err) {
             console.error('Erro ao limpar todas as marcações', err)
@@ -186,8 +185,7 @@ export function ControlScreen({ ...props }: ThreeElements['mesh']) {
         if(sortedNumber) {
             try {
                 const data = await postBall(sortedNumber, true)
-                const ref = ballRefs.current.get(sortedNumber)
-                if (ref?.current) ref.current.activate()
+                ballRefs.current.get(sortedNumber)?.activate()
                 setAnimatedBall(false)
                 setBalls(data.balls)
                 setRoll(true)
@@ -238,11 +236,17 @@ export function ControlScreen({ ...props }: ThreeElements['mesh']) {
                         const x = colIndex * spacingX - ((row.length - 1) * spacingX) / 2
                         const y = -rowIndex * spacingY + ((ALL_NUMBERS.length - 1) * spacingY) / 2
                         
-                        const ref = useRef<BallHandle>(null)
-                        ballRefs.current.set(number, ref)
-
                         return (
-                            <Ball ref={ref} key={number} number={number} position={[x, y, 0]} onClick={handleBallClick} />
+                            <Ball
+                                ref={(h) => {
+                                    if (h) ballRefs.current.set(number, h)
+                                    else ballRefs.current.delete(number)
+                                }}
+                                key={number}
+                                number={number}
+                                position={[x, y, 0]}
+                                onClick={handleBallClick}
+                            />
                         )
                     })
                 )}

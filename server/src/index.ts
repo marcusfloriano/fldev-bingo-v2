@@ -28,7 +28,9 @@ wss.on('connection', (ws: WebSocket) => {
 function broadcast(message: any) {
   const data = JSON.stringify(message)
   for (const client of clients) {
-    client.send(data)
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(data)
+    }
   }
 }
 
@@ -84,6 +86,8 @@ app.post('/zoom', async (req, res) => {
   return res.json({ action: 'zoom', ctrlZoomPanel: ctrlZoomPanel, sortedZoomPanel: sortedZoomPanel })
 })
 
-server.listen(3001, () => {
-  console.log('🚀 Backend rodando em http://localhost:3001')
+initDB().then(() => {
+  server.listen(PORT, () => {
+    console.log(`🚀 Backend rodando em http://localhost:${PORT}`)
+  })
 })

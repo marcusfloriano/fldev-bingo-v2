@@ -24,12 +24,26 @@ npm run lint         # eslint
 
 ### Deploy / atualização
 
+**Forma recomendada** (da sua máquina, via `Makefile` + SSH):
+
 ```bash
-# No servidor (root@srv712811.hstgr.cloud)
+make deploy    # envia deploy.sh por SSH e executa no servidor
+make status    # estado do processo PM2
+make logs      # logs do backend
+make restart   # reinicia o backend
+```
+
+O `deploy.sh` (rodando no servidor) faz: descarta lockfiles sujos → `git pull --ff-only`
+→ build do frontend (`dist/`) e do backend (`server/dist/`) → `pm2 restart`.
+O estado vivo (`server/dist/db.json`) é preservado no rebuild.
+
+**Manual** (equivalente, direto no servidor):
+
+```bash
 cd /var/www/bingo
+git checkout -- package-lock.json server/package-lock.json
 git pull
-npm install --legacy-peer-deps
-npm run build
+npm install --legacy-peer-deps && npm run build
 cd server && npm install && npm run build
 pm2 restart bingo-server
 ```

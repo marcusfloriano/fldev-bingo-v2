@@ -51,7 +51,7 @@ export async function getBall(number: number): Promise<number | boolean> {
   await db.read()
   const exists = db.data!.balls.includes(number)
   if(!exists) return false
-  return db.data!.balls[0]
+  return number
 }
 
 export async function clearBalls(): Promise<void> {

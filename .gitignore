@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Estado vivo do lowdb (local/produção) — não versionar para evitar conflito no deploy
+server/src/db.json
+server/dist/db.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -40,7 +40,7 @@ function getBingoLetter(number: number): string {
 
 export function PrincipalScreen({ ...props }: ThreeElements['mesh']) {
     const meshRef = useRef<THREE.Mesh>(null!)
-    const ballRefs = useRef<Map<number, React.RefObject<BallHandle | null>>>(new Map())
+    const ballRefs = useRef<Map<number, BallHandle>>(new Map())
     const [balls, setBalls] = useState<number[]>([])
     const [roll, setRoll] = useState(false)
     const [sortedBall, setSortedBall] = useState("?")
@@ -48,7 +48,7 @@ export function PrincipalScreen({ ...props }: ThreeElements['mesh']) {
 
 
     useWebSocket((type, number, balls, sorted) => {
-        const ref = ballRefs.current.get(number)
+        const ball = ballRefs.current.get(number)
         if(type == "added") {
             if(sorted) {
                 setRoll(true)
@@ -57,23 +57,21 @@ export function PrincipalScreen({ ...props }: ThreeElements['mesh']) {
                 setTimeout(() => {
                     setAnimatedBall(false)
                     setSortedBall(getBingoLetter(number))
-                    if (ref?.current) ref.current.activate()
+                    ball?.activate()
                     setBalls(balls)
                 }, 3000)
                 setTimeout(() => {
                     setRoll(false)
                 }, 6000)
             } else {
-                if (ref?.current) ref.current.activate()
+                ball?.activate()
                 setBalls(balls)
             }
         } else if (type == "removed") {
-            if (ref?.current) ref.current.deactivate()
+            ball?.deactivate()
         } else if(type == "cleared") {
             setBalls([])
-            ballRefs.current.forEach((ref) => {
-                if (ref.current) ref.current.deactivate()
-            })
+            ballRefs.current.forEach((b) => b.deactivate())
         }
     })
 
@@ -92,8 +90,7 @@ export function PrincipalScreen({ ...props }: ThreeElements['mesh']) {
         getBalls().then(data => {
             setBalls(data.balls)
             data.balls.forEach((n) => {
-                const ref = ballRefs.current.get(n)
-                if (ref?.current) ref.current.activate()
+                ballRefs.current.get(n)?.activate()
             })
         })
         .catch(err => console.error('Erro ao carregar bolas:', err))
@@ -131,10 +128,17 @@ export function PrincipalScreen({ ...props }: ThreeElements['mesh']) {
                         const x = colIndex * spacingX - ((row.length - 1) * spacingX) / 2
                         const y = -rowIndex * spacingY + ((numbers.length - 1) * spacingY) / 2
 
-                        const ref = useRef<BallHandle>(null)
-                        ballRefs.current.set(number, ref)
                         return (
-                            <Ball ref={ref} key={number} number={number} position={[x, y, 0]} clicked={false}/>
+                            <Ball
+                                ref={(h) => {
+                                    if (h) ballRefs.current.set(number, h)
+                                    else ballRefs.current.delete(number)
+                                }}
+                                key={number}
+                                number={number}
+                                position={[x, y, 0]}
+                                clicked={false}
+                            />
                         )
                     })
                 )}
