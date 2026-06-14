@@ -33,3 +33,4 @@ export const postBall = (number: number, sorted: boolean) => apiRequest<{ balls:
 export const getZoom = () => apiRequest<{ ctrlZoomPanel: number, sortedZoomPanel: number }>('/zoom', 'GET')
 export const postZoom = (ctrlZoomPanel: number, sortedZoomPanel: number) => apiRequest<{ action: string, ctrlZoomPanel: number, sortedZoomPanel: number }>('/zoom', 'POST', { ctrlZoomPanel, sortedZoomPanel })
 export const postBallClear = () => apiRequest<{ action: string }>('/balls/clear', 'POST', {})
+export const getLock = () => apiRequest<{ locked: boolean }>('/lock', 'GET')

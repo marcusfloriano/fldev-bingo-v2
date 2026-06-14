@@ -15,7 +15,8 @@ import { ZoomControl } from './base/ZoomControl'
 
 import { SortedBall } from './SortedBall'
 
-import { postBall, getBalls, postZoom, getZoom, postBallClear } from '../api'
+import { connectWebSocket, disconnectChannel } from '../websocketClient'
+import { postBall, getBalls, postZoom, getZoom, postBallClear, getLock } from '../api'
 
 function rollNewNumber(balls: number[]): number | null {
     const allNumbers = Array.from({ length: 75 }, (_, i) => i + 1)
@@ -69,6 +70,8 @@ export function ControlScreen({ ...props }: ThreeElements['mesh']) {
     const [sortedBall, setSortedBall] = useState("?")
     const [sortedMusic, setSortedMusic] = useState(true)
     const [animatedBall, setAnimatedBall] = useState(true)
+    // Trava: true enquanto QUALQUER painel está sorteando (vem do servidor via WS).
+    const [locked, setLocked] = useState(false)
 
     const ALL_NUMBERS = [
         [1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15],
@@ -95,6 +98,44 @@ export function ControlScreen({ ...props }: ThreeElements['mesh']) {
             setSortedZoomPanel(data.sortedZoomPanel)
         })
         .catch(err => console.error('Erro ao carregar Zoom:', err))
+
+        getLock().then(data => setLocked(data.locked))
+        .catch(err => console.error('Erro ao carregar trava:', err))
+    }, [])
+
+    // Sincroniza este painel de controle com os demais via WebSocket.
+    // A animação de sorteio é dirigida pelo servidor, então todos os painéis
+    // animam igual e ficam travados juntos durante o sorteio.
+    useEffect(() => {
+        const wsUrl = import.meta.env.VITE_WS_URL || `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`
+        connectWebSocket('control', wsUrl, (data) => {
+            if (data.action === 'balls') {
+                const ball = ballRefs.current.get(data.number)
+                if (data.type === 'added') {
+                    ball?.activate()
+                    setBalls(data.balls)
+                    if (data.sorted) {
+                        // No controle o número aparece de imediato (sem suspense).
+                        setSortedBall(getBingoLetter(data.number))
+                        setAnimatedBall(false)
+                        setRoll(true)
+                        setTimeout(() => setRoll(false), 6000)
+                    }
+                } else if (data.type === 'removed') {
+                    ball?.deactivate()
+                    setBalls(data.balls)
+                } else if (data.type === 'cleared') {
+                    setBalls([])
+                    ballRefs.current.forEach((b) => b.deactivate())
+                }
+            } else if (data.action === 'zoom') {
+                setCtrlZoomPanel(data.ctrlZoomPanel)
+                setSortedZoomPanel(data.sortedZoomPanel)
+            } else if (data.action === 'lock') {
+                setLocked(data.locked)
+            }
+        })
+        return () => disconnectChannel('control')
     }, [])
 
     useFrame(() => {
@@ -154,9 +195,10 @@ export function ControlScreen({ ...props }: ThreeElements['mesh']) {
     }, [])
 
     const handleBallClick = async (number: number) => {
+        if (locked) return
         try {
-            const data = await postBall(number, false)
-            setBalls(data.balls)
+            await postBall(number, false)
+            // O estado (bolas/visual) é aplicado pela mensagem WebSocket, igual em todos os painéis.
         } catch (err) {
             console.error('Erro ao enviar número:', err)
         }
@@ -171,36 +213,27 @@ export function ControlScreen({ ...props }: ThreeElements['mesh']) {
     }
 
     const handleBallClear = async () => {
+        if (locked) return
         try {
             await postBallClear()
-            ballRefs.current.forEach((b) => b.deactivate())
-            setBalls([])
+            // A limpeza é aplicada pela mensagem WebSocket em todos os painéis.
         } catch (err) {
             console.error('Erro ao limpar todas as marcações', err)
         }
     }
 
     const handleRollNumber = async () => {
+        if (locked) return
         const sortedNumber = rollNewNumber(balls)
-        if(sortedNumber) {
-            try {
-                const data = await postBall(sortedNumber, true)
-                ballRefs.current.get(sortedNumber)?.activate()
-                setAnimatedBall(false)
-                setBalls(data.balls)
-                setRoll(true)
-                setSortedBall(getBingoLetter(sortedNumber))
-                playSound()
-                setTimeout(() => {
-                    setSortedBall(getBingoLetter(sortedNumber))
-                    setAnimatedBall(false)
-                }, 3000)
-                setTimeout(() => {
-                    setRoll(false)
-                }, 6000)
-            } catch (err) {
-                console.error('Erro ao enviar número:', err)
-            }
+        if (!sortedNumber) return
+        try {
+            await postBall(sortedNumber, true)
+            // Animação e estado chegam pelo WebSocket (todos os painéis juntos).
+            // O som toca só neste painel, que iniciou o sorteio.
+            playSound()
+        } catch (err) {
+            // 409 = já há um sorteio em andamento em outro painel; ignora.
+            console.error('Sorteio bloqueado ou erro:', err)
         }
     }
 
@@ -245,6 +278,7 @@ export function ControlScreen({ ...props }: ThreeElements['mesh']) {
                                 key={number}
                                 number={number}
                                 position={[x, y, 0]}
+                                clicked={!locked}
                                 onClick={handleBallClick}
                             />
                         )
@@ -274,8 +308,9 @@ export function ControlScreen({ ...props }: ThreeElements['mesh']) {
                 <ZoomControl 
                     position={[7.4,0.55,0]} 
                     number={ctrlZoomPanel}
-                    text='ZOOM CONTROLE' 
-                    onClick={(direction: 'top' | 'right' | 'bottom' | 'left') => { 
+                    text='ZOOM CONTROLE'
+                    onClick={(direction: 'top' | 'right' | 'bottom' | 'left') => {
+                        if(locked) return
                         if(direction == "left") {
                             handleReleaseZoom(ctrlZoomPanel - 1, sortedZoomPanel)
                             setCtrlZoomPanel(ctrlZoomPanel - 1)
@@ -291,7 +326,8 @@ export function ControlScreen({ ...props }: ThreeElements['mesh']) {
                     text='ZOOM SORTEIO'
                     color='#d90429'
                     fontColor='#d90429'
-                    onClick={(direction: 'top' | 'right' | 'bottom' | 'left') => { 
+                    onClick={(direction: 'top' | 'right' | 'bottom' | 'left') => {
+                        if(locked) return
                         if(direction == "left") {
                             handleReleaseZoom(ctrlZoomPanel, sortedZoomPanel - 1)
                             setSortedZoomPanel(sortedZoomPanel - 1)

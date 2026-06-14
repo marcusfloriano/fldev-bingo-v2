@@ -42,6 +42,10 @@ export function connectWebSocket(channel: string, url: string, onMessage: Messag
   }
 }
 
+export function disconnectChannel(channel: string) {
+  channels.delete(channel)
+}
+
 export function sendMessage(data: any) {
   if (socket && isConnected) {
     socket.send(JSON.stringify(data))

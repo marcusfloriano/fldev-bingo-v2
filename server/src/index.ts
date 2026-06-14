@@ -19,8 +19,16 @@ const wss = new WebSocketServer({ server })
 // Lista de conexões WebSocket ativas
 const clients = new Set<WebSocket>()
 
+// Trava de sorteio: enquanto `drawing` é true, nenhum painel de controle pode
+// sortear / marcar / limpar. Libera sozinha após a animação (DRAW_LOCK_MS).
+let drawing = false
+let drawTimer: ReturnType<typeof setTimeout> | null = null
+const DRAW_LOCK_MS = 6000
+
 wss.on('connection', (ws: WebSocket) => {
   clients.add(ws)
+  // Informa o estado atual da trava ao cliente que acabou de conectar.
+  ws.send(JSON.stringify({ action: 'lock', locked: drawing }))
   ws.on('close', () => clients.delete(ws))
 })
 
@@ -42,11 +50,31 @@ app.get('/balls', async (req, res) => {
   res.json({'balls': balls})
 })
 
+app.get('/lock', (req, res) => {
+  res.json({ locked: drawing })
+})
+
 app.post('/balls', async (req, res) => {
   const { number, sorted } = req.body
 
   if (typeof number !== 'number') {
     return res.status(400).json({ error: 'Número inválido' })
+  }
+
+  // Nenhuma alteração de bolas é permitida enquanto há um sorteio em andamento.
+  if (drawing) {
+    return res.status(409).json({ error: 'Sorteio em andamento' })
+  }
+
+  // Um sorteio (sorted) abre a trava exclusiva, liberada após a animação.
+  if (sorted) {
+    drawing = true
+    broadcast({ action: 'lock', locked: true })
+    if (drawTimer) clearTimeout(drawTimer)
+    drawTimer = setTimeout(() => {
+      drawing = false
+      broadcast({ action: 'lock', locked: false })
+    }, DRAW_LOCK_MS)
   }
 
   const ball = await getBall(number)
@@ -65,6 +93,9 @@ app.post('/balls', async (req, res) => {
 })
 
 app.post('/balls/clear', async (req, res) => {
+  if (drawing) {
+    return res.status(409).json({ error: 'Sorteio em andamento' })
+  }
   await clearBalls()
   const balls = await getBalls()
   broadcast({ action: 'balls', type: 'cleared', number: 0, balls: balls })
