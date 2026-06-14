@@ -5,6 +5,8 @@ let socket: WebSocket | null = null
 let isConnected = false
 let wsUrl: string | null = null
 const channels: Map<string, MessageHandler> = new Map<string, MessageHandler>()
+// Callbacks disparados a cada (re)conexão — usados para re-registrar estado no servidor.
+const openListeners = new Set<() => void>()
 
 function openSocket(url: string) {
   wsUrl = url
@@ -13,6 +15,7 @@ function openSocket(url: string) {
   socket.addEventListener('open', () => {
     console.log('WebSocket connected')
     isConnected = true
+    openListeners.forEach((cb) => cb())
   })
 
   socket.addEventListener('close', () => {
@@ -44,6 +47,14 @@ export function connectWebSocket(channel: string, url: string, onMessage: Messag
 
 export function disconnectChannel(channel: string) {
   channels.delete(channel)
+}
+
+// Registra um callback chamado a cada (re)conexão do socket (e já agora, se conectado).
+// Retorna uma função para cancelar o registro.
+export function onOpen(cb: () => void): () => void {
+  openListeners.add(cb)
+  if (isConnected) cb()
+  return () => openListeners.delete(cb)
 }
 
 export function sendMessage(data: any) {

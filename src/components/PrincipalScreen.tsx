@@ -172,6 +172,7 @@ export function PrincipalScreen({ ...props }: ThreeElements['mesh']) {
                 </group>
             )}
 
+
         </mesh>
     )
 }

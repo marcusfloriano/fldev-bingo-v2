@@ -16,7 +16,7 @@ import { ZoomControl } from './base/ZoomControl'
 import { SortedBall } from './SortedBall'
 
 import { connectWebSocket, disconnectChannel } from '../websocketClient'
-import { postBall, getBalls, postZoom, getZoom, postBallClear, getLock } from '../api'
+import { postBall, getBalls, postZoom, getZoom, postBallClear, getLock, getPanels, postPanelZoom, type DisplayPanel } from '../api'
 
 function rollNewNumber(balls: number[]): number | null {
     const allNumbers = Array.from({ length: 75 }, (_, i) => i + 1)
@@ -72,6 +72,9 @@ export function ControlScreen({ ...props }: ThreeElements['mesh']) {
     const [animatedBall, setAnimatedBall] = useState(true)
     // Trava: true enquanto QUALQUER painel está sorteando (vem do servidor via WS).
     const [locked, setLocked] = useState(false)
+    // Painéis de exibição (para controlar o zoom de cada um de forma independente).
+    const [panels, setPanels] = useState<DisplayPanel[]>([])
+    const [selectedPanelId, setSelectedPanelId] = useState<string | null>(null)
 
     const ALL_NUMBERS = [
         [1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15],
@@ -101,6 +104,9 @@ export function ControlScreen({ ...props }: ThreeElements['mesh']) {
 
         getLock().then(data => setLocked(data.locked))
         .catch(err => console.error('Erro ao carregar trava:', err))
+
+        getPanels().then(data => setPanels(data.panels))
+        .catch(err => console.error('Erro ao carregar painéis:', err))
     }, [])
 
     // Sincroniza este painel de controle com os demais via WebSocket.
@@ -133,6 +139,8 @@ export function ControlScreen({ ...props }: ThreeElements['mesh']) {
                 setSortedZoomPanel(data.sortedZoomPanel)
             } else if (data.action === 'lock') {
                 setLocked(data.locked)
+            } else if (data.action === 'panels') {
+                setPanels(data.panels)
             }
         })
         return () => disconnectChannel('control')
@@ -237,6 +245,25 @@ export function ControlScreen({ ...props }: ThreeElements['mesh']) {
         }
     }
 
+    // ----- Seleção e zoom dos painéis de exibição conectados -----
+    const connectedPanels = panels.filter(p => p.connected)
+    const selIndex = Math.max(0, connectedPanels.findIndex(p => p.id === selectedPanelId))
+    const selectedPanel = connectedPanels[selIndex] ?? null
+
+    const cyclePanel = (step: number) => {
+        if (connectedPanels.length === 0) return
+        const next = (selIndex + step + connectedPanels.length) % connectedPanels.length
+        setSelectedPanelId(connectedPanels[next].id)
+    }
+
+    const handlePanelZoom = (delta: -1 | 1) => {
+        if (!selectedPanel) return
+        const zoom = selectedPanel.zoom + delta
+        // Atualização otimista; o WebSocket confirma para todos os painéis.
+        setPanels(prev => prev.map(p => p.id === selectedPanel.id ? { ...p, zoom } : p))
+        postPanelZoom(selectedPanel.id, zoom).catch(err => console.error('Erro ao ajustar zoom do painel:', err))
+    }
+
     return (
         <mesh
             {...props}
@@ -320,21 +347,27 @@ export function ControlScreen({ ...props }: ThreeElements['mesh']) {
                         }
                     }}
                 />
-                <ZoomControl 
-                    position={[4.9,-0.9,0]} 
-                    number={sortedZoomPanel}
-                    text='ZOOM SORTEIO'
+                <ZoomControl
+                    position={[4.9,-0.3,0]}
+                    text=''
                     color='#d90429'
                     fontColor='#d90429'
+                    number={selectedPanel ? selIndex + 1 : '—'}
                     onClick={(direction: 'top' | 'right' | 'bottom' | 'left') => {
-                        if(locked) return
-                        if(direction == "left") {
-                            handleReleaseZoom(ctrlZoomPanel, sortedZoomPanel - 1)
-                            setSortedZoomPanel(sortedZoomPanel - 1)
-                        } else if(direction == "right") {
-                            handleReleaseZoom(ctrlZoomPanel, sortedZoomPanel + 1)
-                            setSortedZoomPanel(sortedZoomPanel + 1)
-                        }
+                        if(direction == "left") cyclePanel(-1)
+                        else if(direction == "right") cyclePanel(1)
+                    }}
+                />
+                <ZoomControl
+                    position={[4.9,-1.4,0]}
+                    text='ZOOM EXIBIÇÃO'
+                    color='#d90429'
+                    fontColor='#d90429'
+                    number={selectedPanel ? selectedPanel.zoom : 0}
+                    onClick={(direction: 'top' | 'right' | 'bottom' | 'left') => {
+                        if(!selectedPanel) return
+                        if(direction == "left") handlePanelZoom(-1)
+                        else if(direction == "right") handlePanelZoom(1)
                     }}
                 />
             </mesh>

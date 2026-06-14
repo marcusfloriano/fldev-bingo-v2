@@ -7,7 +7,8 @@ import { WebSocketServer, WebSocket } from 'ws'
 import {
   initDB, getBalls, getBall, addBall, removeBall,
   getZoom, setZoom,
-  clearBalls
+  clearBalls,
+  getPanels, upsertPanel, setPanelZoom, setPanelName
 } from './db.js'
 
 const app = express()
@@ -25,12 +26,9 @@ let drawing = false
 let drawTimer: ReturnType<typeof setTimeout> | null = null
 const DRAW_LOCK_MS = 6000
 
-wss.on('connection', (ws: WebSocket) => {
-  clients.add(ws)
-  // Informa o estado atual da trava ao cliente que acabou de conectar.
-  ws.send(JSON.stringify({ action: 'lock', locked: drawing }))
-  ws.on('close', () => clients.delete(ws))
-})
+// Painéis de exibição conectados agora: socket -> panelId (efêmero).
+// A configuração (nome/zoom) é persistida no db; aqui só rastreamos quem está online.
+const panelSockets = new Map<WebSocket, string>()
 
 // Broadcast para todos os clientes conectados
 function broadcast(message: any) {
@@ -41,6 +39,43 @@ function broadcast(message: any) {
     }
   }
 }
+
+async function buildPanelList() {
+  const panels = await getPanels()
+  const connected = new Set(panelSockets.values())
+  return panels.map(p => ({ ...p, connected: connected.has(p.id) }))
+}
+
+async function broadcastPanels() {
+  broadcast({ action: 'panels', panels: await buildPanelList() })
+}
+
+wss.on('connection', async (ws: WebSocket) => {
+  clients.add(ws)
+  // Informa estado atual (trava + painéis) ao cliente que acabou de conectar.
+  ws.send(JSON.stringify({ action: 'lock', locked: drawing }))
+  ws.send(JSON.stringify({ action: 'panels', panels: await buildPanelList() }))
+
+  ws.on('message', async (raw) => {
+    let msg: any
+    try { msg = JSON.parse(raw.toString()) } catch { return }
+
+    if (msg.type === 'register-display' && typeof msg.id === 'string') {
+      // Este navegador está exibindo o painel de sorteio.
+      await upsertPanel(msg.id, typeof msg.name === 'string' ? msg.name : undefined)
+      panelSockets.set(ws, msg.id)
+      await broadcastPanels()
+    } else if (msg.type === 'unregister-display') {
+      // Saiu do modo exibição (ex.: abriu o controle).
+      if (panelSockets.delete(ws)) await broadcastPanels()
+    }
+  })
+
+  ws.on('close', () => {
+    clients.delete(ws)
+    if (panelSockets.delete(ws)) broadcastPanels()
+  })
+})
 
 app.use(cors())
 app.use(express.json())
@@ -115,6 +150,30 @@ app.post('/zoom', async (req, res) => {
   await setZoom(ctrlZoomPanel, sortedZoomPanel)
   broadcast({ action: 'zoom', ctrlZoomPanel: ctrlZoomPanel, sortedZoomPanel: sortedZoomPanel })
   return res.json({ action: 'zoom', ctrlZoomPanel: ctrlZoomPanel, sortedZoomPanel: sortedZoomPanel })
+})
+
+app.get('/panels', async (req, res) => {
+  res.json({ panels: await buildPanelList() })
+})
+
+app.post('/panels/zoom', async (req, res) => {
+  const { id, zoom } = req.body
+  if (typeof id !== 'string' || typeof zoom !== 'number') {
+    return res.status(400).json({ error: 'Parâmetros inválidos' })
+  }
+  await setPanelZoom(id, zoom)
+  await broadcastPanels()
+  return res.json({ action: 'panel-zoom', id, zoom })
+})
+
+app.post('/panels/name', async (req, res) => {
+  const { id, name } = req.body
+  if (typeof id !== 'string' || typeof name !== 'string') {
+    return res.status(400).json({ error: 'Parâmetros inválidos' })
+  }
+  await setPanelName(id, name)
+  await broadcastPanels()
+  return res.json({ action: 'panel-name', id, name })
 })
 
 initDB().then(() => {

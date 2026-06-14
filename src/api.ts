@@ -34,3 +34,8 @@ export const getZoom = () => apiRequest<{ ctrlZoomPanel: number, sortedZoomPanel
 export const postZoom = (ctrlZoomPanel: number, sortedZoomPanel: number) => apiRequest<{ action: string, ctrlZoomPanel: number, sortedZoomPanel: number }>('/zoom', 'POST', { ctrlZoomPanel, sortedZoomPanel })
 export const postBallClear = () => apiRequest<{ action: string }>('/balls/clear', 'POST', {})
 export const getLock = () => apiRequest<{ locked: boolean }>('/lock', 'GET')
+
+export type DisplayPanel = { id: string, name: string, zoom: number, connected: boolean }
+export const getPanels = () => apiRequest<{ panels: DisplayPanel[] }>('/panels', 'GET')
+export const postPanelZoom = (id: string, zoom: number) => apiRequest<{ action: string, id: string, zoom: number }>('/panels/zoom', 'POST', { id, zoom })
+export const postPanelName = (id: string, name: string) => apiRequest<{ action: string, id: string, name: string }>('/panels/name', 'POST', { id, name })

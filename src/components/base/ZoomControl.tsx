@@ -6,7 +6,7 @@ import { Text } from '@react-three/drei'
 
 type ZoomControlProps = {
     text: string
-    number: number
+    number: number | string
     min?: number
     max?: number
     fontSize?: number
